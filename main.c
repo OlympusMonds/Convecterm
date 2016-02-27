@@ -3,11 +3,11 @@
 #include <math.h>
 
 #define XMIN 0.
-#define XMAX 2.
+#define XMAX 4.
 #define YMIN 0.
 #define YMAX 2.
 
-#define NX 51
+#define NX 101
 #define NY 51
 
 #define NIT 100
@@ -287,7 +287,7 @@ void update_nu(double nu[][NX], double t[][NX]){
 
     double ref_nu = 1.;
     double ref_temp = 500.;
-    double theta = 0.1;
+    double theta = 0.2;
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
@@ -417,14 +417,15 @@ int main () {
     while ( 1 ) {
         if ( timestep % 1000 == 0 ) {
             visualise(t, 0., 1000.);
-            //visualise(u, -1e-2, 1e-2);
             printf("Timestep: %04d, Current time: %.4f, dt: %e\n", timestep, current_time, dt);
+            /*
             printf("t: %3.3f, %3.3f, nu: %3.3f, %3.3f, rho: %3.3f, %3.3f\n", t[1][20],
                                                                              t[40][20],
                                                                              nu[1][20],
                                                                              nu[40][20],
                                                                              rho[1][20],
                                                                              rho[40][20]);
+            */
             printf("\n");
         }
 
