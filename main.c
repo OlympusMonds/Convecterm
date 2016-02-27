@@ -10,9 +10,10 @@
 #define NX 51
 #define NY 51
 
-#define NIT 50
+#define NIT 100
 #define NT 100000
 #define MAX_TIME 2000.
+#define GRAVITY 0.0001
 
 #define COLOR_RESET  "\033[0m"
 #define BOLD         "\033[1m"
@@ -53,7 +54,7 @@ void visualise(double arr[][NX], double min, double max){
                printf(RED_TEXT);
            else
                printf(MAGENTA_TEXT);
-           printf("\u2588 ");
+           printf("\u2588\u2588");
        }
        printf("\n");
     }
@@ -125,7 +126,6 @@ void solve_stokes_momentum(double u[][NX], double v[][NX],
                            double *dt, double *dx, double *dy){
     int i, j;
 
-
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
             u[j][i] = un[j][i] - ( *dt / (rho[j][i] * 2. * *dx) ) * (p[j][i+1] - p[j][i-1]) +
@@ -138,12 +138,12 @@ void solve_stokes_momentum(double u[][NX], double v[][NX],
                       nu[j][i] * (
                                   ((*dt/ (*dx * *dx)) * (vn[j][i+1] - 2*vn[j][i] + vn[j][i-1])) +
                                   ((*dt/ (*dy * *dy)) * (vn[j+1][i] - 2*vn[j][i] + vn[j-1][i]))
-                                 )) - 0.01;
-
+                                 )) - (GRAVITY * rho[j][i]);
         }
     }
 }
- 
+
+
 void apply_thermal_boundary_conditions(double t[][NX]){
     int i, j;
     
@@ -162,8 +162,8 @@ void apply_thermal_boundary_conditions(double t[][NX]){
         // Temp bottom wall, 
         t[NY-1][i] = 0.;
     }
-
 }
+
 
 void apply_vel_boundary_conditions(double u[][NX], double v[][NX]){
     int i, j;
@@ -180,17 +180,17 @@ void apply_vel_boundary_conditions(double u[][NX], double v[][NX]){
 
     for ( i = 6; i < NX-6; i++ ){
         // Bottom wall, imposed shear
-        u[0][i] = -1e-1;
-        // u[0][i] = u[1][i];
+        //u[0][i] = -1e-1;
+        u[0][i] = u[1][i];
         v[0][i] = 0.;
 
         // Top wall, imposed shear
-        u[NY-1][i] = 1e-1;
-        //u[NY-1][i] = u[NY-2][i];
+        //u[NY-1][i] = 1e-1;
+        u[NY-1][i] = u[NY-2][i];
         v[NY-1][i] = 0.;
     }
-
 }
+
 
 void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
                                double* dx, double* dy,
@@ -214,8 +214,8 @@ void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
            ky = *k * (tn[j+1][i] - 2.*tn[j][i] + tn[j-1][i]) / (*dy * *dy);
 
            t[j][i] = tn[j][i] + *dt * ((*H + kx + ky)/(rho[j][i] * *cp) \
-                     - u[j][i] * ( (tn[j][i] - tn[j][i-1]) / *dx ) \
-                     - v[j][i] * ( (tn[j][i] - tn[j-1][i]) / *dy ) );
+                     - (u[j][i] * ( (tn[j][i+1] - tn[j][i-1]) / (2 * *dx) )) \
+                     - (v[j][i] * ( (tn[j+1][i] - tn[j-1][i]) / (2 * *dy) )) );
        }
     }
 
@@ -237,7 +237,7 @@ void solve_flow(double u[][NX], double v[][NX],
     int i, j;
 
     while ( 1 ) {
-        if ( stepcount >= 10000 ){
+        if ( stepcount >= 50000 ){
             printf(COLOR_RESET);
             printf("Unable to solve: sc = %d, diff = %e\n", stepcount, diff);
             exit( 1 );
@@ -281,12 +281,13 @@ void solve_flow(double u[][NX], double v[][NX],
     } 
 }
 
+
 void update_nu(double nu[][NX], double t[][NX]){
     int i, j;
 
     double ref_nu = 1.;
     double ref_temp = 500.;
-    double theta = 0.2;
+    double theta = 0.1;
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
@@ -301,7 +302,7 @@ void update_rho(double rho[][NX], double t[][NX]){
 
     double ref_rho = 100.;
     double ref_temp = 500.;
-    double thermal_expansivity = 0.0005;
+    double thermal_expansivity = 0.001;
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
@@ -310,7 +311,45 @@ void update_rho(double rho[][NX], double t[][NX]){
     }
 }
 
-//double calc_dt(double u[][NX], double v[][NX], double rho[][NX], 
+
+void calc_dt(double u[][NX], double v[][NX], double rho[][NX],
+             double* dx, double* dy, 
+             double* dt, double* k, 
+             double* cp){
+    int i,j;
+    double vel_dt = 1e6;;
+    double nrg_dt;
+    double min_seperation;
+    double max_vel;
+    double min_rho;
+    double uv, vv;
+
+    max_vel = 0.;
+    min_rho = 1e6;
+
+    for ( j = 0; j < NY; j++ ){
+       for ( i = 0; i < NX; i++ ){
+           uv = fabs(u[j][i]);
+           vv = fabs(v[j][i]);
+           max_vel = uv > max_vel ? uv : max_vel;
+           max_vel = vv > max_vel ? vv : max_vel;  // TODO: split this into 2 vars, for potential compiler opt
+           min_rho = rho[j][i] < min_rho ? rho[j][i] : min_rho;
+       }
+    }
+
+    min_seperation = *dx < *dy ? *dx : *dy;
+    if ( max_vel != 0 )
+        vel_dt = 1e-3 * min_seperation / (max_vel*2);
+
+    nrg_dt =  (min_seperation * min_seperation) / (*k / min_rho * *cp);
+
+    //printf("maxvel: %f, min_rho: %f, min_sep: %f, vel_dt: %e, nrg_dt: %e", max_vel, min_rho, min_seperation, vel_dt, nrg_dt);
+
+    //*dt = vel_dt < nrg_dt ? vel_dt : nrg_dt;
+    *dt = nrg_dt;
+    //printf(", dt = %e\n", *dt);
+}
+
 
 int main () {
 
@@ -342,6 +381,7 @@ int main () {
         y[i] = YMIN + i * dy;
     }
 
+    // Initial conditions
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
           u[j][i] = 0.; 
@@ -350,12 +390,23 @@ int main () {
           b[j][i] = 0.;
           rho[j][i] = 100.; 
           nu[j][i] = 1.; 
-          if (j < 4 && i > 15 && i < 25)
+          if ( j < 4 && i < (int)(NX/2) ) {
               t[j][i] = 1000.;
+              v[j][i] = 0.1; 
+          }
+          else if ( j > NY-4 && i > (int)(NX/2) ){
+              t[j][i] = 0.;
+              v[j][i] = -0.1; 
+          }
           else
               t[j][i] = 500.;
        }
     }
+
+    // Init the boundaries too
+    apply_vel_boundary_conditions(u, v);
+    apply_thermal_boundary_conditions(t);
+
 
 
     int timestep = 0;
@@ -364,27 +415,27 @@ int main () {
     // Main loop
     //while ( timestep < NT && current_time < MAX_TIME ) {
     while ( 1 ) {
-        solve_advection_diffusion(t, u, v, &dx, &dy, rho, &dt, &cp, &k, &H);
-        update_rho(rho, t);
-        update_nu(nu, t);
-        solve_flow(u, v, &dx, &dy, p, rho, nu, &dt);
-   
-
         if ( timestep % 1000 == 0 ) {
             visualise(t, 0., 1000.);
-            printf("Timestep: %04d, Current time: %.4f\n", timestep, current_time);
+            //visualise(u, -1e-2, 1e-2);
+            printf("Timestep: %04d, Current time: %.4f, dt: %e\n", timestep, current_time, dt);
             printf("t: %3.3f, %3.3f, nu: %3.3f, %3.3f, rho: %3.3f, %3.3f\n", t[1][20],
                                                                              t[40][20],
                                                                              nu[1][20],
                                                                              nu[40][20],
                                                                              rho[1][20],
                                                                              rho[40][20]);
-            printf("dx: %f, dy: %f\n", dx, dy);
             printf("\n");
         }
+
+        solve_advection_diffusion(t, u, v, &dx, &dy, rho, &dt, &cp, &k, &H);
+        update_rho(rho, t);
+        //update_nu(nu, t);
+        solve_flow(u, v, &dx, &dy, p, rho, nu, &dt);
+
         current_time += dt;
         timestep++;
-        //calc_dt(u, v, dx, dy);
+        //calc_dt(u, v, rho, &dx, &dy, &dt, &k, &cp);
     }
 
 
