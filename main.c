@@ -430,7 +430,7 @@ int main () {
 
         solve_advection_diffusion(t, u, v, &dx, &dy, rho, &dt, &cp, &k, &H);
         update_rho(rho, t);
-        //update_nu(nu, t);
+        update_nu(nu, t);
         solve_flow(u, v, &dx, &dy, p, rho, nu, &dt);
 
         current_time += dt;
