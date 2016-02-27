@@ -13,7 +13,7 @@
 #define NIT 100
 #define NT 100000
 #define MAX_TIME 2000.
-#define GRAVITY 0.0001
+#define GRAVITY 0.0003
 
 #define COLOR_RESET  "\033[0m"
 #define BOLD         "\033[1m"
@@ -370,7 +370,7 @@ int main () {
     double cp = 100.;
     double k = 100.;
     double H = 0.;
-    double dt = 5e-5;
+    double dt = 1e-4;
 
     int i, j;  // Init some counters
 
@@ -438,27 +438,6 @@ int main () {
         timestep++;
         //calc_dt(u, v, rho, &dx, &dy, &dt, &k, &cp);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     return 0;
