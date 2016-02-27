@@ -3,11 +3,11 @@
 #include <math.h>
 
 #define XMIN 0.
-#define XMAX 4.
+#define XMAX 5.
 #define YMIN 0.
 #define YMAX 2.
 
-#define NX 101
+#define NX 126
 #define NY 51
 
 #define NIT 100
@@ -367,7 +367,7 @@ int main () {
     double nu[NY][NX];
     double t[NY][NX];
 
-    double cp = 100.;
+    double cp = 60.;
     double k = 100.;
     double H = 0.;
     double dt = 1e-4;
@@ -417,7 +417,7 @@ int main () {
     while ( 1 ) {
         if ( timestep % 1000 == 0 ) {
             visualise(t, 0., 1000.);
-            printf("Timestep: %04d, Current time: %.4f, dt: %e\n", timestep, current_time, dt);
+            printf("Timestep: %06d, Current time: %.4f, dt: %e\n", timestep, current_time, dt);
             /*
             printf("t: %3.3f, %3.3f, nu: %3.3f, %3.3f, rho: %3.3f, %3.3f\n", t[1][20],
                                                                              t[40][20],
