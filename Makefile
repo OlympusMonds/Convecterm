@@ -1,4 +1,4 @@
-TARGET = converterm
+TARGET = convecterm
 LIBS = -lm
 CC = clang
 CFLAGS = -Wall -O3
