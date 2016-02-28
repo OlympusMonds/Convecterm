@@ -9,5 +9,4 @@ It's pretty sensitive to parameter changes, so take it easy when playing with th
 
 
 ## TODO
-- Balance the colours properly
 - Add temp-dependent conductivity, to give the plumes a chance.
