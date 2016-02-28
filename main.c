@@ -27,47 +27,50 @@
 #define WHITE_TEXT   "\033[37;1m"
 #define WIPE_SCREEN  "\033[2J"
 
+
 void visualise(double arr[][NX], double min, double max){
     int i,j;
 
-    double low = ((max - min) * 0.1429) + min;
-    double mlow = ((max - min) * 0.28571) + min;
-    double mlow2 = ((max - min) * 0.42857) + min;
-    double mid = ((max - min) * 0.57128) + min;
-    double mhigh = ((max - min) * 0.7142857) + min;
-    double high = ((max - min) * 0.85714) + min;
+    /* 7 colours in the terminal, split into bins */
+    double r1 = ((max - min) * 0.1429) + min;
+    double r2 = ((max - min) * 0.28571) + min;
+    double r3 = ((max - min) * 0.42857) + min;
+    double r4 = ((max - min) * 0.57128) + min;
+    double r5 = ((max - min) * 0.71429) + min;
+    double r6 = ((max - min) * 0.85714) + min;
     
     printf(WIPE_SCREEN);
-    for ( j = NY-1; j >= 0; j-- ){
+    for ( j = NY-1; j >= 0; j-- ){  // Origin is bottom-left
        for ( i = 0; i < NX; i++ ){
-           if ( arr[j][i] < low )
+           if ( arr[j][i] < r1 )
                printf(BLUE_TEXT);
-           else if (arr[j][i] < mlow && arr[j][i] >= low )
+           else if (arr[j][i] < r2 && arr[j][i] >= r1 )
                printf(CYAN_TEXT);
-           else if (arr[j][i] < mlow2 && arr[j][i] >= mlow )
+           else if (arr[j][i] < r3 && arr[j][i] >= r2 )
                printf(GREEN_TEXT);
-           else if (arr[j][i] < mid && arr[j][i] >= mlow2 )
+           else if (arr[j][i] < r4 && arr[j][i] >= r3 )
                printf(WHITE_TEXT);
-           else if (arr[j][i] < mhigh && arr[j][i] >= mid )
+           else if (arr[j][i] < r5 && arr[j][i] >= r4 )
                printf(YELLOW_TEXT);
-           else if (arr[j][i] < high && arr[j][i] >= mhigh )
+           else if (arr[j][i] < r6 && arr[j][i] >= r5 )
                printf(RED_TEXT);
            else
                printf(MAGENTA_TEXT);
-           printf("\u2588\u2588");
+           printf("\u2588\u2588");  // Block character is rectangle, so double for square
        }
        printf("\n");
     }
     printf(COLOR_RESET);
 }
 
+
 void solve_pressure_poisson(double p[][NX], double* dx, double* dy, 
                             double *dt, double u[][NX], double v[][NX],
                             double rho[][NX]){
+    int i, j, n;
+    
     double b[NY][NX];
     double pn[NY][NX];
-
-    int i, j, n;
     double dx2 = *dx * *dx;
     double dy2 = *dy * *dy;
 
@@ -113,9 +116,6 @@ void solve_pressure_poisson(double p[][NX], double* dx, double* dy,
             p[NY-1][i] = p[NY-2][i];
         }
     }
-
-
-
 }
 
 
@@ -180,12 +180,10 @@ void apply_vel_boundary_conditions(double u[][NX], double v[][NX]){
 
     for ( i = 6; i < NX-6; i++ ){
         // Bottom wall, imposed shear
-        //u[0][i] = -1e-1;
         u[0][i] = u[1][i];
         v[0][i] = 0.;
 
         // Top wall, imposed shear
-        //u[NY-1][i] = 1e-1;
         u[NY-1][i] = u[NY-2][i];
         v[NY-1][i] = 0.;
     }
@@ -229,12 +227,13 @@ void solve_flow(double u[][NX], double v[][NX],
                 double nu[][NX],
                 double* dt){
 
+    int i, j;
+    int stepcount = 0;
+
     double un[NY][NX];
     double vn[NY][NX];
     double diff = 1000.;
     double udif, vdif, unt, vnt;
-    int stepcount = 0;
-    int i, j;
 
     while ( 1 ) {
         if ( stepcount >= 50000 ){
@@ -277,7 +276,6 @@ void solve_flow(double u[][NX], double v[][NX],
             diff = 1.0;
 
         stepcount++;
-        //printf("res: %e, sc: %d\n",diff, stepcount);
     } 
 }
 
@@ -291,7 +289,7 @@ void update_nu(double nu[][NX], double t[][NX]){
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
-           nu[j][i] = ref_nu * exp(-theta * (t[j][i] - ref_temp)/ref_temp);
+           nu[j][i] = ref_nu * exp(-theta * ((t[j][i] - ref_temp)/ref_temp));
        }
     }
 }
@@ -320,22 +318,24 @@ void calc_dt(double u[][NX], double v[][NX], double rho[][NX],
     double vel_dt = 1e6;;
     double nrg_dt;
     double min_seperation;
-    double max_vel;
+    double max_vel, max_velx, max_vely;
     double min_rho;
     double uv, vv;
 
-    max_vel = 0.;
+    max_velx = 0.;
+    max_vely = 0.;
     min_rho = 1e6;
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
            uv = fabs(u[j][i]);
            vv = fabs(v[j][i]);
-           max_vel = uv > max_vel ? uv : max_vel;
-           max_vel = vv > max_vel ? vv : max_vel;  // TODO: split this into 2 vars, for potential compiler opt
+           max_velx = uv > max_velx ? uv : max_velx;
+           max_vely = vv > max_vely ? vv : max_vely;
            min_rho = rho[j][i] < min_rho ? rho[j][i] : min_rho;
        }
     }
+    max_vel = max_velx > max_vely ? max_velx : max_vely;
 
     min_seperation = *dx < *dy ? *dx : *dy;
     if ( max_vel != 0 )
@@ -355,24 +355,23 @@ int main () {
 
     double dx = (XMAX - XMIN) / (NX - 1);
     double dy = (YMAX - YMIN) / (NY - 1);
-    
 
     double x[NX];
     double y[NY];
-    double u[NY][NX];
-    double v[NY][NX];
-    double p[NY][NX];
-    double b[NY][NX];
-    double rho[NY][NX];
-    double nu[NY][NX];
-    double t[NY][NX];
+    double u[NY][NX];    // vel in x
+    double v[NY][NX];    // vel in y
+    double p[NY][NX];    // pressure
+    double b[NY][NX];    // extra pressure stuff
+    double rho[NY][NX];  // density
+    double nu[NY][NX];   // viscosity
+    double t[NY][NX];    // temperature
 
     double cp = 60.;
     double k = 100.;
     double H = 0.;
     double dt = 1e-4;
 
-    int i, j;  // Init some counters
+    int i, j;
 
     for ( i = 0; i < NX; i++ ) {
         x[i] = XMIN + i * dx;
@@ -389,15 +388,12 @@ int main () {
           p[j][i] = 0.; 
           b[j][i] = 0.;
           rho[j][i] = 100.; 
-          nu[j][i] = 1.; 
-          if ( j < 4 && i < (int)(NX/2) ) {
+          nu[j][i] = 1.;
+          // Make the temp field unstable 
+          if ( j < 4 && i < (int)(NX/2) )
               t[j][i] = 1000.;
-              v[j][i] = 0.1; 
-          }
-          else if ( j > NY-4 && i > (int)(NX/2) ){
+          else if ( j > NY-5 && i > (int)(NX/2) )
               t[j][i] = 0.;
-              v[j][i] = -0.1; 
-          }
           else
               t[j][i] = 500.;
        }
@@ -408,12 +404,10 @@ int main () {
     apply_thermal_boundary_conditions(t);
 
 
-
     int timestep = 0;
     double current_time = 0;
     
     // Main loop
-    //while ( timestep < NT && current_time < MAX_TIME ) {
     while ( 1 ) {
         if ( timestep % 1000 == 0 ) {
             visualise(t, 0., 1000.);
@@ -429,6 +423,7 @@ int main () {
             printf("\n");
         }
 
+        // Solve thermal stuff first, so the flow equations have some meat to start with
         solve_advection_diffusion(t, u, v, &dx, &dy, rho, &dt, &cp, &k, &H);
         update_rho(rho, t);
         update_nu(nu, t);
