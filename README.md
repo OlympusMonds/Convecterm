@@ -7,6 +7,10 @@ Convecterm uses the stokes-flow equations with eulerian advection-diffusion to g
 
 It's pretty sensitive to parameter changes, so take it easy when playing with them.
 
+## To run Convecterm:
+1. Make sure the CC variable in the Makefile is set to your preferred compiler
+2. then just: make
+3. ./convecterm
 
 ## TODO
 - Add temp-dependent conductivity, to give the plumes a chance.
