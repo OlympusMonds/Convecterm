@@ -64,30 +64,30 @@ void visualise(double arr[][NX], double min, double max){
 }
 
 
-void solve_pressure_poisson(double p[][NX], double* dx, double* dy, 
-                            double *dt, double u[][NX], double v[][NX],
+void solve_pressure_poisson(double p[][NX], double dx, double dy, 
+                            double dt, double u[][NX], double v[][NX],
                             double rho[][NX]){
     int i, j, n;
     
     double b[NY][NX];
     double pn[NY][NX];
-    double dx2 = *dx * *dx;
-    double dy2 = *dy * *dy;
+    double dx2 = dx * dx;
+    double dy2 = dy * dy;
 
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
             b[j][i] = (( rho[j][i] * dx2 * dy2 ) / ( 2 * (dx2 + dy2))) * 
                       ( 
-                          1 / *dt * 
+                          1 / dt * 
                           (
-                           (( u[j][i+1] - u[j][i-1] ) / ( 2 * *dx )) +
-                           (( v[j+1][i] - v[j-1][i] ) / ( 2 * *dy ))
+                           (( u[j][i+1] - u[j][i-1] ) / ( 2 * dx )) +
+                           (( v[j+1][i] - v[j-1][i] ) / ( 2 * dy ))
                           ) -
-                          pow( (( u[j][i+1] - u[j][i-1] ) / ( 2* *dx)), 2) -
+                          pow( (( u[j][i+1] - u[j][i-1] ) / ( 2* dx)), 2) -
                           2 *
-                          ((( u[j+1][i] - u[j-1][i] ) / ( 2 * *dy )) *
-                           (( v[j][i+1] - v[j][i-1] ) / ( 2 * *dx ))) -
-                          pow( (( v[j+1][i] - v[j-1][i] ) / ( 2 * *dy )), 2)
+                          ((( u[j+1][i] - u[j-1][i] ) / ( 2 * dy )) *
+                           (( v[j][i+1] - v[j][i-1] ) / ( 2 * dx ))) -
+                          pow( (( v[j+1][i] - v[j-1][i] ) / ( 2 * dy )), 2)
                       );
         }
     } 
@@ -123,21 +123,21 @@ void solve_stokes_momentum(double u[][NX], double v[][NX],
                            double un[][NX], double vn[][NX],
                            double p[][NX], double rho[][NX],
                            double nu[][NX],
-                           double *dt, double *dx, double *dy){
+                           double dt, double dx, double dy){
     int i, j;
-
+   
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
-            u[j][i] = un[j][i] - ( *dt / (rho[j][i] * 2. * *dx) ) * (p[j][i+1] - p[j][i-1]) +
+            u[j][i] = un[j][i] - ( dt / (rho[j][i] * 2. * dx) ) * (p[j][i+1] - p[j][i-1]) +
                       nu[j][i] * (
-                                  ((*dt/ (*dx * *dx)) * (un[j][i+1] - 2*un[j][i] + un[j][i-1])) +
-                                  ((*dt/ (*dy * *dy)) * (un[j+1][i] - 2*un[j][i] + un[j-1][i]))
+                                  ((dt/ (dx * dx)) * (un[j][i+1] - 2*un[j][i] + un[j][i-1])) +
+                                  ((dt/ (dy * dy)) * (un[j+1][i] - 2*un[j][i] + un[j-1][i]))
                                  );
             
-            v[j][i] = (vn[j][i] - ( *dt / (rho[j][i] * 2. * *dy) ) * (p[j+1][i] - p[j-1][i]) +
+            v[j][i] = (vn[j][i] - ( dt / (rho[j][i] * 2. * dy) ) * (p[j+1][i] - p[j-1][i]) +
                       nu[j][i] * (
-                                  ((*dt/ (*dx * *dx)) * (vn[j][i+1] - 2*vn[j][i] + vn[j][i-1])) +
-                                  ((*dt/ (*dy * *dy)) * (vn[j+1][i] - 2*vn[j][i] + vn[j-1][i]))
+                                  ((dt/ (dx * dx)) * (vn[j][i+1] - 2*vn[j][i] + vn[j][i-1])) +
+                                  ((dt/ (dy * dy)) * (vn[j+1][i] - 2*vn[j][i] + vn[j-1][i]))
                                  )) - (GRAVITY * rho[j][i]);
         }
     }
@@ -191,10 +191,10 @@ void apply_vel_boundary_conditions(double u[][NX], double v[][NX]){
 
 
 void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
-                               double* dx, double* dy,
-                               double rho[][NX], double* dt,
-                               double* cp, double* k,
-                               double* H){
+                               double dx, double dy,
+                               double rho[][NX], double dt,
+                               double cp, double k,
+                               double H){
     int i,j; 
     double tn[NY][NX];
     double kx;
@@ -208,12 +208,12 @@ void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
     
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
-           kx = *k * (tn[j][i+1] - 2.*tn[j][i] + tn[j][i-1]) / (*dx * *dx);
-           ky = *k * (tn[j+1][i] - 2.*tn[j][i] + tn[j-1][i]) / (*dy * *dy);
+           kx = k * (tn[j][i+1] - 2.*tn[j][i] + tn[j][i-1]) / (dx * dx);
+           ky = k * (tn[j+1][i] - 2.*tn[j][i] + tn[j-1][i]) / (dy * dy);
 
-           t[j][i] = tn[j][i] + *dt * ((*H + kx + ky)/(rho[j][i] * *cp) \
-                     - (u[j][i] * ( (tn[j][i+1] - tn[j][i-1]) / (2 * *dx) )) \
-                     - (v[j][i] * ( (tn[j+1][i] - tn[j-1][i]) / (2 * *dy) )) );
+           t[j][i] = tn[j][i] + dt * ((H + kx + ky)/(rho[j][i] * cp) \
+                     - (u[j][i] * ( (tn[j][i+1] - tn[j][i-1]) / (2 * dx) )) \
+                     - (v[j][i] * ( (tn[j+1][i] - tn[j-1][i]) / (2 * dy) )) );
        }
     }
 
@@ -222,10 +222,10 @@ void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
 
 
 void solve_flow(double u[][NX], double v[][NX], 
-                double* dx, double* dy,
+                double dx, double dy,
                 double p[][NX], double rho[][NX],
                 double nu[][NX],
-                double* dt){
+                double dt){
 
     int i, j;
     int stepcount = 0;
@@ -356,12 +356,11 @@ int main () {
     double dx = (XMAX - XMIN) / (NX - 1);
     double dy = (YMAX - YMIN) / (NY - 1);
 
-    double x[NX];
-    double y[NY];
+    //double x[NX];
+    //double y[NY];
     double u[NY][NX];    // vel in x
     double v[NY][NX];    // vel in y
     double p[NY][NX];    // pressure
-    double b[NY][NX];    // extra pressure stuff
     double rho[NY][NX];  // density
     double nu[NY][NX];   // viscosity
     double t[NY][NX];    // temperature
@@ -373,12 +372,13 @@ int main () {
 
     int i, j;
 
-    for ( i = 0; i < NX; i++ ) {
-        x[i] = XMIN + i * dx;
-    }
-    for ( i = 0; i < NY; i++ ) {
-        y[i] = YMIN + i * dy;
-    }
+    // Don't actually use these guys
+    //for ( i = 0; i < NX; i++ ) {
+    //    x[i] = XMIN + i * dx;
+    //}
+    //for ( i = 0; i < NY; i++ ) {
+    //    y[i] = YMIN + i * dy;
+    //}
 
     // Initial conditions
     for ( j = 0; j < NY; j++ ){
@@ -386,7 +386,6 @@ int main () {
           u[j][i] = 0.; 
           v[j][i] = 0.; 
           p[j][i] = 0.; 
-          b[j][i] = 0.;
           rho[j][i] = 100.; 
           nu[j][i] = 1.;
           // Make the temp field unstable 
@@ -424,10 +423,10 @@ int main () {
         }
 
         // Solve thermal stuff first, so the flow equations have some meat to start with
-        solve_advection_diffusion(t, u, v, &dx, &dy, rho, &dt, &cp, &k, &H);
+        solve_advection_diffusion(t, u, v, dx, dy, rho, dt, cp, k, H);
         update_rho(rho, t);
         update_nu(nu, t);
-        solve_flow(u, v, &dx, &dy, p, rho, nu, &dt);
+        solve_flow(u, v, dx, dy, p, rho, nu, dt);
 
         current_time += dt;
         timestep++;
