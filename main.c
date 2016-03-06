@@ -27,7 +27,7 @@
 #define WIPE_SCREEN  "\033[2J"
 
 
-void visualise(double arr[][NX], double min, double max){
+void visualise(double arr[][NX], double min, double max, int clear){
     int i,j;
 
     /* 7 colours in the terminal, split into bins */
@@ -38,7 +38,8 @@ void visualise(double arr[][NX], double min, double max){
     double r5 = ((max - min) * 0.71429) + min;
     double r6 = ((max - min) * 0.85714) + min;
     
-    printf(WIPE_SCREEN);
+    if ( clear != 0 )
+        printf(WIPE_SCREEN);
     for ( j = NY-1; j >= 0; j-- ){  // Origin is bottom-left
        for ( i = 0; i < NX; i++ ){
            if ( arr[j][i] < r1 )
@@ -220,7 +221,7 @@ void apply_vel_boundary_conditions(double u[][NX], double v[][NX]){
 void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
                                double dx, double dy,
                                double rho[][NX], double dt,
-                               double cp, double k,
+                               double cp, double k[][NX],
                                double H){
     int i,j; 
     double tn[NY][NX];
@@ -235,8 +236,8 @@ void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
     
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
-           kx = k * (tn[j][i+1] - 2.*tn[j][i] + tn[j][i-1]) / (dx * dx);
-           ky = k * (tn[j+1][i] - 2.*tn[j][i] + tn[j-1][i]) / (dy * dy);
+           kx = k[j][i] * (tn[j][i+1] - 2.*tn[j][i] + tn[j][i-1]) / (dx * dx);
+           ky = k[j][i] * (tn[j+1][i] - 2.*tn[j][i] + tn[j-1][i]) / (dy * dy);
 
            t[j][i] = tn[j][i] + dt * ((H + kx + ky)/(rho[j][i] * cp) \
                      - (u[j][i] * ( (tn[j][i+1] - tn[j][i-1]) / (2 * dx) )) \
@@ -337,6 +338,21 @@ void update_rho(double rho[][NX], double t[][NX]){
 }
 
 
+void update_k(double k[][NX], double t[][NX]){
+    int i, j;
+
+    double ref_k = 100.;
+    double ref_temp = 500.;
+    double thermal_factor = 0.0005;
+
+    for ( j = 0; j < NY; j++ ){
+       for ( i = 0; i < NX; i++ ){
+           k[j][i] = ref_k * (1 - (thermal_factor * (t[j][i] - ref_temp)));
+       }
+    }
+}
+
+
 void calc_dt(double u[][NX], double v[][NX], double rho[][NX],
              double* dx, double* dy, 
              double* dt, double* k, 
@@ -391,9 +407,9 @@ int main () {
     double rho[NY][NX];  // density
     double nu[NY][NX];   // viscosity
     double t[NY][NX];    // temperature
+    double k[NY][NX];    // conductivity
 
     double cp = 60.;
-    double k = 100.;
     double H = 0.;
     double dt = 1e-4;
     double ref_rho = 100.;
@@ -423,6 +439,7 @@ int main () {
               t[j][i] = 0.;
           else
               t[j][i] = 500.;
+          k[j][i] = 100.;
        }
     }
 
@@ -437,7 +454,7 @@ int main () {
     // Main loop
     while ( 1 ) {
         if ( timestep % 1000 == 0 ) {
-            visualise(t, 0., 1000.);
+            visualise(t, 0., 1000., 1);
             printf("Timestep: %06d, Current time: %.4f, dt: %e\n", timestep, current_time, dt);
             /*
             printf("t: %3.3f, %3.3f, nu: %3.3f, %3.3f, rho: %3.3f, %3.3f\n", t[1][20],
@@ -454,6 +471,8 @@ int main () {
         solve_advection_diffusion(t, u, v, dx, dy, rho, dt, cp, k, H);
         update_rho(rho, t);
         update_nu(nu, t);
+        update_k(k, t);
+
         solve_flow(u, v, dx, dy, p, rho, nu, dt);
 
         current_time += dt;

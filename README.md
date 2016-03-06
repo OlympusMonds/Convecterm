@@ -13,4 +13,6 @@ It's pretty sensitive to parameter changes, so take it easy when playing with th
 3. ./convecterm
 
 ## TODO
-- Add temp-dependent conductivity, to give the plumes a chance.
+- Avoid getting into a steady-state:
+  - Add some plate velocities to the surface
+  - Add some variance to the basal heat condition
