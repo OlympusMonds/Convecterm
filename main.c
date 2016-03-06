@@ -7,10 +7,9 @@
 #define YMIN 0.
 #define YMAX 2.
 
-#define NX 126
+#define NX 176
 #define NY 51
 
-#define NIT 100
 #define NT 100000
 #define MAX_TIME 2000.
 #define GRAVITY 0.0003
@@ -92,7 +91,18 @@ void solve_pressure_poisson(double p[][NX], double dx, double dy,
         }
     } 
 
-    for ( n = 0; n < NIT; n++ ){
+    double diff = 1.0;
+    double pdif, pnt;
+    int stepcount = 0;
+    while ( 1 ) {
+        if ( stepcount >= 1e6 ){
+            printf(COLOR_RESET);
+            printf("Unable to solve poisson: sc = %d, diff = %e\n", stepcount, diff);
+            exit( 1 );
+        }
+        if ( diff < 1e-5 && stepcount > 4 )
+            break;
+
         for ( j = 0; j < NY; j++ ){
             for ( i = 0; i < NX; i++){
                 pn[j][i] = p[j][i];
@@ -115,6 +125,23 @@ void solve_pressure_poisson(double p[][NX], double dx, double dy,
             p[0][i] = p[1][i];
             p[NY-1][i] = p[NY-2][i];
         }
+
+        // Check if in steady state
+        pdif = 0.;
+        pnt = 0.;
+
+        for ( j = 0; j < NY; j++ ){
+           for ( i = 0; i < NX; i++ ){
+               pdif += fabs(fabs(p[j][i]) - fabs(pn[j][i]));
+               pnt += fabs(pn[j][i]);
+           }
+        }
+        if ( pnt != 0. )
+            diff = fabs(pdif/pnt);
+        else
+            diff = 1.0;
+
+        stepcount += 1;
     }
 }
 
@@ -369,6 +396,7 @@ int main () {
     double k = 100.;
     double H = 0.;
     double dt = 1e-4;
+    double ref_rho = 100.;
 
     int i, j;
 
@@ -385,8 +413,8 @@ int main () {
        for ( i = 0; i < NX; i++ ){
           u[j][i] = 0.; 
           v[j][i] = 0.; 
-          p[j][i] = 0.; 
-          rho[j][i] = 100.; 
+          p[j][i] = ref_rho * dy * GRAVITY * (NY - j); 
+          rho[j][i] = ref_rho; 
           nu[j][i] = 1.;
           // Make the temp field unstable 
           if ( j < 4 && i < (int)(NX/2) )
