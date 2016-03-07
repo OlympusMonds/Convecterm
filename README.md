@@ -9,8 +9,8 @@ It's pretty sensitive to parameter changes, so take it easy when playing with th
 
 ## To run Convecterm:
 1. Make sure the CC variable in the Makefile is set to your preferred compiler
-2. then just: make
-3. ./convecterm
+2. then just: ```make```
+3. ```./convecterm```
 
 ## TODO
 - Avoid getting into a steady-state:
