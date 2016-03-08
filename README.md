@@ -14,3 +14,4 @@ It's pretty sensitive to parameter changes, so take it easy when playing with th
 
 ## TODO
 - Figure out why the dt is so sensitive. Anything much < or > than 1e-4 for the dt makes the model not solve.
+  - This is why calc_dt is not used :(
