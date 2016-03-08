@@ -14,21 +14,15 @@
 #define MAX_TIME 2000.
 #define GRAVITY 0.0003
 
+#define COLOR_ESC    '\033'
 #define COLOR_RESET  "\033[0m"
 #define BOLD         "\033[1m"
-#define BLACK_TEXT   "\033[30;1m"
-#define RED_TEXT     "\033[31;1m"
-#define GREEN_TEXT   "\033[32;1m"
-#define YELLOW_TEXT  "\033[33;1m"
-#define BLUE_TEXT    "\033[34;1m"
-#define MAGENTA_TEXT "\033[35;1m"
-#define CYAN_TEXT    "\033[36;1m"
-#define WHITE_TEXT   "\033[37;1m"
 #define WIPE_SCREEN  "\033[2J"
 
 
 void visualise(double arr[][NX], double min, double max, int clear){
     int i,j;
+    unsigned int count;
 
     /* 7 colours in the terminal, split into bins */
     double r1 = ((max - min) * 0.1429) + min;
@@ -37,28 +31,43 @@ void visualise(double arr[][NX], double min, double max, int clear){
     double r4 = ((max - min) * 0.57128) + min;
     double r5 = ((max - min) * 0.71429) + min;
     double r6 = ((max - min) * 0.85714) + min;
-    
+
+
+    char line[9*NX + 1];
+
     if ( clear != 0 )
-        printf(WIPE_SCREEN);
+       printf(WIPE_SCREEN);
+
+    printf(BOLD);
     for ( j = NY-1; j >= 0; j-- ){  // Origin is bottom-left
+       count = 0;
        for ( i = 0; i < NX; i++ ){
+           line[count] = COLOR_ESC;
+           line[count+1] = '[';
+           line[count+2] = '3';
            if ( arr[j][i] < r1 )
-               printf(BLUE_TEXT);
+               line[count+3] = '4';  // BLUE
            else if (arr[j][i] < r2 && arr[j][i] >= r1 )
-               printf(CYAN_TEXT);
+               line[count+3] = '6';  // CYAN
            else if (arr[j][i] < r3 && arr[j][i] >= r2 )
-               printf(GREEN_TEXT);
+               line[count+3] = '2';  // GREEN
            else if (arr[j][i] < r4 && arr[j][i] >= r3 )
-               printf(WHITE_TEXT);
+               line[count+3] = '7';  // WHITE
            else if (arr[j][i] < r5 && arr[j][i] >= r4 )
-               printf(YELLOW_TEXT);
+               line[count+3] = '3';  // YELLOW
            else if (arr[j][i] < r6 && arr[j][i] >= r5 )
-               printf(RED_TEXT);
+               line[count+3] = '1';  // RED
            else
-               printf(MAGENTA_TEXT);
-           printf("\u2588\u2588");  // Block character is rectangle, so double for square
+               line[count+3] = '5';  // MAGENTA
+           line[count+4] = ';';
+           line[count+5] = '1';
+           line[count+6] = 'm';
+           line[count+7] = '#';
+           line[count+8] = '#'; 
+           count += 9;
        }
-       printf("\n");
+       line[count+1] = '\0';
+       printf("%s\n", line);
     }
     printf(COLOR_RESET);
 }
@@ -313,7 +322,7 @@ void update_nu(double nu[][NX], double t[][NX]){
 
     double ref_nu = 1.;
     double ref_temp = 500.;
-    double theta = 0.2;
+    double theta = 1.5;
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
@@ -343,7 +352,7 @@ void update_k(double k[][NX], double t[][NX]){
 
     double ref_k = 100.;
     double ref_temp = 500.;
-    double thermal_factor = 0.0005;
+    double thermal_factor = 0.001;
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
@@ -411,7 +420,7 @@ int main () {
 
     double cp = 60.;
     double H = 0.;
-    double dt = 1e-4;
+    double dt = 9e-5;
     double ref_rho = 100.;
 
     int i, j;
