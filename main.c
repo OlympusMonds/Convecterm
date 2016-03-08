@@ -5,9 +5,9 @@
 #define XMIN 0.
 #define XMAX 5.
 #define YMIN 0.
-#define YMAX 2.
+#define YMAX 2.5
 
-#define NX 176
+#define NX 101
 #define NY 51
 
 #define NT 100000

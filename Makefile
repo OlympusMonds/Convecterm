@@ -1,6 +1,6 @@
 TARGET = convecterm
 LIBS = -lm
-CC = clang
+CC = gcc
 CFLAGS = -Wall -O3
 
 .PHONY: default all clean
