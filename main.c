@@ -179,8 +179,6 @@ void solve_stokes_momentum(double u[][NX], double v[][NX],
     int i, j;
 
     // Pre-compute
-    double twodx = 2. * dx;
-    double twody = 2. * dy;
     double dtodx2 = dt / (dx * dx);
     double dtody2 = dt / (dy * dy);
    
@@ -330,8 +328,9 @@ void solve_flow(double u[][NX], double v[][NX],
         for ( j = 0; j < NY; j++ ){
            for ( i = 0; i < NX; i++ ){
                udif += fabs(fabs(u[j][i]) - fabs(un[j][i]));
-               vdif += fabs(fabs(v[j][i]) - fabs(vn[j][i]));
                unt += fabs(un[j][i]);
+               
+               vdif += fabs(fabs(v[j][i]) - fabs(vn[j][i]));
                vnt += fabs(vn[j][i]);
            }
         }
@@ -346,6 +345,11 @@ void solve_flow(double u[][NX], double v[][NX],
 
 
 void update_nu(double nu[][NX], double t[][NX]){
+    /* Calculate temperature dependent viscosity. Based on 
+     * Frank-Kamenetski formulation.
+     * Viscosity gets lower with increase in temperature
+     */
+
     int i, j;
 
     double ref_nu = 1.;
@@ -361,6 +365,11 @@ void update_nu(double nu[][NX], double t[][NX]){
 
 
 void update_rho(double rho[][NX], double t[][NX]){
+    /* Calculate density change due to thermal expansion.
+     * Using boissinesq approximation (rho change does not
+     * effect velocity field). Change is linear.
+     */
+
     int i, j;
 
     double ref_rho = 100.;
@@ -369,13 +378,19 @@ void update_rho(double rho[][NX], double t[][NX]){
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
-           rho[j][i] = ref_rho * (1 - (thermal_expansivity * (t[j][i] - ref_temp)));
+           rho[j][i] = ref_rho * (1. - (thermal_expansivity * (t[j][i] - ref_temp)));
        }
     }
 }
 
 
 void update_k(double k[][NX], double t[][NX]){
+    /* Calculate temperature dependent conductivity. 
+     * Using linear relationship where higher temp gives
+     * lower conductivity. This means slabs (cold drips)
+     * will suck up heat faster. It's also relatively natural.
+     */
+
     int i, j;
 
     double ref_k = 100.;
@@ -384,7 +399,7 @@ void update_k(double k[][NX], double t[][NX]){
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
-           k[j][i] = ref_k * (1 - (thermal_factor * (t[j][i] - ref_temp)));
+           k[j][i] = ref_k * (1. - (thermal_factor * (t[j][i] - ref_temp)));
        }
     }
 }
@@ -395,7 +410,7 @@ void calc_dt(double u[][NX], double v[][NX], double rho[][NX],
              double* dt, double* k, 
              double* cp){
     int i,j;
-    double vel_dt = 1e6;;
+    double vel_dt = 1e6;
     double nrg_dt;
     double min_seperation;
     double max_vel, max_velx, max_vely;
@@ -423,15 +438,13 @@ void calc_dt(double u[][NX], double v[][NX], double rho[][NX],
 
     nrg_dt =  (min_seperation * min_seperation) / (*k / min_rho * *cp);
 
-    //printf("maxvel: %f, min_rho: %f, min_sep: %f, vel_dt: %e, nrg_dt: %e", max_vel, min_rho, min_seperation, vel_dt, nrg_dt);
-
-    //*dt = vel_dt < nrg_dt ? vel_dt : nrg_dt;
-    *dt = nrg_dt;
-    //printf(", dt = %e\n", *dt);
+    *dt = vel_dt < nrg_dt ? vel_dt : nrg_dt;
 }
 
 
 int main () {
+
+    double current_time;
 
     double dx = (XMAX - XMIN) / (NX - 1);
     double dy = (YMAX - YMIN) / (NY - 1);
@@ -452,6 +465,8 @@ int main () {
     double ref_rho = 100.;
 
     int i, j;
+    int timestep;
+    
 
     // Don't actually use these guys
     //for ( i = 0; i < NX; i++ ) {
@@ -466,7 +481,7 @@ int main () {
        for ( i = 0; i < NX; i++ ){
           u[j][i] = 0.; 
           v[j][i] = 0.; 
-          p[j][i] = ref_rho * dy * GRAVITY * (NY - j); 
+          p[j][i] = ref_rho * dy * GRAVITY * (NY - j);  // Approximate lithostatic pressure
           rho[j][i] = ref_rho; 
           nu[j][i] = 1.;
           // Make the temp field unstable 
@@ -484,7 +499,6 @@ int main () {
     apply_vel_boundary_conditions(u, v);
     apply_thermal_boundary_conditions(t);
 
-
     int timestep = 0;
     double current_time = 0;
     
@@ -493,14 +507,6 @@ int main () {
         if ( timestep % 1000 == 0 ) {
             visualise(t, 0., 1000., 1);
             printf("Timestep: %06d, Current time: %.4f, dt: %e\n", timestep, current_time, dt);
-            /*
-            printf("t: %3.3f, %3.3f, nu: %3.3f, %3.3f, rho: %3.3f, %3.3f\n", t[1][20],
-                                                                             t[40][20],
-                                                                             nu[1][20],
-                                                                             nu[40][20],
-                                                                             rho[1][20],
-                                                                             rho[40][20]);
-            */
             printf("\n");
         }
 
@@ -509,12 +515,11 @@ int main () {
         update_rho(rho, t);
         update_nu(nu, t);
         update_k(k, t);
-
         solve_flow(u, v, dx, dy, p, rho, nu, dt);
 
         current_time += dt;
         timestep++;
-        //calc_dt(u, v, rho, &dx, &dy, &dt, &k, &cp);
+        //calc_dt(u, v, rho, &dx, &dy, &dt, &k, &cp);  // TODO: model is very sensitive to ANY dt change. Fix this.
     }
 
 
