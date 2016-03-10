@@ -247,20 +247,27 @@ void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
     double kx;
     double ky;
 
+    // Pre-compute some basics
+    double dx2 = dx * dx;
+    double dy2 = dy * dy;
+    double 2dx = 2. * dx;
+    double 2dy = 2. * dy;
+
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
            tn[j][i] = t[j][i];
        }
     }
-    
+   
+ 
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
-           kx = k[j][i] * (tn[j][i+1] - 2.*tn[j][i] + tn[j][i-1]) / (dx * dx);
-           ky = k[j][i] * (tn[j+1][i] - 2.*tn[j][i] + tn[j-1][i]) / (dy * dy);
+           kx = k[j][i] * (tn[j][i+1] - 2.*tn[j][i] + tn[j][i-1]) / dx2;
+           ky = k[j][i] * (tn[j+1][i] - 2.*tn[j][i] + tn[j-1][i]) / dy2;
 
            t[j][i] = tn[j][i] + dt * ((H + kx + ky)/(rho[j][i] * cp) \
-                     - (u[j][i] * ( (tn[j][i+1] - tn[j][i-1]) / (2 * dx) )) \
-                     - (v[j][i] * ( (tn[j+1][i] - tn[j-1][i]) / (2 * dy) )) );
+                     - (u[j][i] * ( (tn[j][i+1] - tn[j][i-1]) / 2dx )) \
+                     - (v[j][i] * ( (tn[j+1][i] - tn[j-1][i]) / 2dy )) );
        }
     }
 
