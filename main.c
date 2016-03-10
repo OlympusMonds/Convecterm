@@ -33,42 +33,45 @@ void visualise(double arr[][NX], double min, double max, int clear){
     double r6 = ((max - min) * 0.85714) + min;
 
 
-    char line[9*NX + 1];
+    char field[(NY * (9*NX + 1)) + 1];
 
     if ( clear != 0 )
        printf(WIPE_SCREEN);
 
     printf(BOLD);
-    for ( j = NY-1; j >= 0; j-- ){  // Origin is bottom-left
-       count = 0;
-       for ( i = 0; i < NX; i++ ){
-           line[count] = COLOR_ESC;
-           line[count+1] = '[';
-           line[count+2] = '3';
+    count = 0;
+
+    for ( j = NY-1; j >= 0; j-- ) {  // Origin is bottom-left
+       for ( i = 0; i < NX; i++ ) {
+           field[count] = COLOR_ESC;
+           field[count+1] = '[';
+           field[count+2] = '3';
            if ( arr[j][i] < r1 )
-               line[count+3] = '4';  // BLUE
+               field[count+3] = '4';  // BLUE
            else if (arr[j][i] < r2 && arr[j][i] >= r1 )
-               line[count+3] = '6';  // CYAN
+               field[count+3] = '6';  // CYAN
            else if (arr[j][i] < r3 && arr[j][i] >= r2 )
-               line[count+3] = '2';  // GREEN
+               field[count+3] = '2';  // GREEN
            else if (arr[j][i] < r4 && arr[j][i] >= r3 )
-               line[count+3] = '7';  // WHITE
+               field[count+3] = '7';  // WHITE
            else if (arr[j][i] < r5 && arr[j][i] >= r4 )
-               line[count+3] = '3';  // YELLOW
+               field[count+3] = '3';  // YELLOW
            else if (arr[j][i] < r6 && arr[j][i] >= r5 )
-               line[count+3] = '1';  // RED
+               field[count+3] = '1';  // RED
            else
-               line[count+3] = '5';  // MAGENTA
-           line[count+4] = ';';
-           line[count+5] = '1';
-           line[count+6] = 'm';
-           line[count+7] = '#';
-           line[count+8] = '#'; 
+               field[count+3] = '5';  // MAGENTA
+           field[count+4] = ';';
+           field[count+5] = '1';
+           field[count+6] = 'm';
+           field[count+7] = '#';
+           field[count+8] = '#'; 
            count += 9;
        }
-       line[count+1] = '\0';
-       printf("%s\n", line);
+       field[count] = '\n';
+       count += 1;
     }
+    field[count] = '\0';
+    printf("%s", field);
     printf(COLOR_RESET);
 }
 
