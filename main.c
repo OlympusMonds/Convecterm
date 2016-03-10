@@ -90,24 +90,29 @@ void solve_pressure_poisson(double p[][NX], double dx, double dy,
     double diff, pdif, pnt;
     double b[NY][NX];
     double pn[NY][NX];
+
+    // Pre-compute
+    double inv_dt = 1. / dt;
     double dx2 = dx * dx;
     double dy2 = dy * dy;
+    double twodx = 2. * dx;
+    double twody = 2. * dy;
 
     // Pre-solve b term.
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
             b[j][i] = (( rho[j][i] * dx2 * dy2 ) / ( 2 * (dx2 + dy2))) * 
                       ( 
-                          1 / dt * 
+                          inv_dt * 
                           (
-                           (( u[j][i+1] - u[j][i-1] ) / ( 2 * dx )) +
-                           (( v[j+1][i] - v[j-1][i] ) / ( 2 * dy ))
+                           (( u[j][i+1] - u[j][i-1] ) / twodx ) +
+                           (( v[j+1][i] - v[j-1][i] ) / twody )
                           ) -
-                          pow( (( u[j][i+1] - u[j][i-1] ) / ( 2* dx)), 2) -
+                          pow( (( u[j][i+1] - u[j][i-1] ) / twodx), 2) -
                           2 *
-                          ((( u[j+1][i] - u[j-1][i] ) / ( 2 * dy )) *
-                           (( v[j][i+1] - v[j][i-1] ) / ( 2 * dx ))) -
-                          pow( (( v[j+1][i] - v[j-1][i] ) / ( 2 * dy )), 2)
+                          ((( u[j+1][i] - u[j-1][i] ) / twody ) *
+                           (( v[j][i+1] - v[j][i-1] ) / twodx )) -
+                          pow( (( v[j+1][i] - v[j-1][i] ) / twody ), 2)
                       );
         }
     } 
@@ -172,20 +177,26 @@ void solve_stokes_momentum(double u[][NX], double v[][NX],
                            double nu[][NX],
                            double dt, double dx, double dy){
     int i, j;
+
+    // Pre-compute
+    double twodx = 2. * dx;
+    double twody = 2. * dy;
+    double dtodx2 = dt / (dx * dx);
+    double dtody2 = dt / (dy * dy);
    
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
             u[j][i] = un[j][i] - ( dt / (rho[j][i] * 2. * dx) ) * (p[j][i+1] - p[j][i-1]) +
                       nu[j][i] * (
-                                  ((dt/ (dx * dx)) * (un[j][i+1] - 2*un[j][i] + un[j][i-1])) +
-                                  ((dt/ (dy * dy)) * (un[j+1][i] - 2*un[j][i] + un[j-1][i]))
+                                  (dtodx2 * (un[j][i+1] - 2*un[j][i] + un[j][i-1])) +
+                                  (dtody2 * (un[j+1][i] - 2*un[j][i] + un[j-1][i]))
                                  );
             
             v[j][i] = (vn[j][i] - ( dt / (rho[j][i] * 2. * dy) ) * (p[j+1][i] - p[j-1][i]) +
-                      nu[j][i] * (
-                                  ((dt/ (dx * dx)) * (vn[j][i+1] - 2*vn[j][i] + vn[j][i-1])) +
-                                  ((dt/ (dy * dy)) * (vn[j+1][i] - 2*vn[j][i] + vn[j-1][i]))
-                                 )) - (GRAVITY * rho[j][i]);
+                       nu[j][i] * (
+                                   (dtodx2 * (vn[j][i+1] - 2*vn[j][i] + vn[j][i-1])) +
+                                   (dtody2 * (vn[j+1][i] - 2*vn[j][i] + vn[j-1][i]))
+                                  )) - (GRAVITY * rho[j][i]);
         }
     }
 }
@@ -250,8 +261,8 @@ void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
     // Pre-compute some basics
     double dx2 = dx * dx;
     double dy2 = dy * dy;
-    double 2dx = 2. * dx;
-    double 2dy = 2. * dy;
+    double twodx = 2. * dx;
+    double twody = 2. * dy;
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
@@ -266,8 +277,8 @@ void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
            ky = k[j][i] * (tn[j+1][i] - 2.*tn[j][i] + tn[j-1][i]) / dy2;
 
            t[j][i] = tn[j][i] + dt * ((H + kx + ky)/(rho[j][i] * cp) \
-                     - (u[j][i] * ( (tn[j][i+1] - tn[j][i-1]) / 2dx )) \
-                     - (v[j][i] * ( (tn[j+1][i] - tn[j-1][i]) / 2dy )) );
+                     - (u[j][i] * ( (tn[j][i+1] - tn[j][i-1]) / twodx )) \
+                     - (v[j][i] * ( (tn[j+1][i] - tn[j-1][i]) / twody )) );
        }
     }
 
