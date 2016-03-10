@@ -2,18 +2,19 @@
 #include <stdlib.h>
 #include <math.h>
 
+// Domain size
 #define XMIN 0.
 #define XMAX 5.
 #define YMIN 0.
 #define YMAX 2.5
 
+// Resolution
 #define NX 101
 #define NY 51
 
-#define NT 100000
-#define MAX_TIME 2000.
 #define GRAVITY 0.0003
 
+// Characters for visualisation
 #define COLOR_ESC    '\033'
 #define COLOR_RESET  "\033[0m"
 #define BOLD         "\033[1m"
@@ -21,10 +22,14 @@
 
 
 void visualise(double arr[][NX], double min, double max, int clear){
+    /* Visualise a 2D field, coloured with 7 colours between min 
+     * and max. If clear is 0, then clear the screen before visualising,
+     */
+
     int i,j;
     unsigned int count;
 
-    /* 7 colours in the terminal, split into bins */
+    // 7 colours in the terminal, split into bins
     double r1 = ((max - min) * 0.1429) + min;
     double r2 = ((max - min) * 0.28571) + min;
     double r3 = ((max - min) * 0.42857) + min;
@@ -32,15 +37,15 @@ void visualise(double arr[][NX], double min, double max, int clear){
     double r5 = ((max - min) * 0.71429) + min;
     double r6 = ((max - min) * 0.85714) + min;
 
-
+    // Store characters in field before printfing.
     char field[(NY * (9*NX + 1)) + 1];
 
     if ( clear != 0 )
        printf(WIPE_SCREEN);
 
     printf(BOLD);
-    count = 0;
 
+    count = 0;
     for ( j = NY-1; j >= 0; j-- ) {  // Origin is bottom-left
        for ( i = 0; i < NX; i++ ) {
            field[count] = COLOR_ESC;
@@ -79,13 +84,16 @@ void visualise(double arr[][NX], double min, double max, int clear){
 void solve_pressure_poisson(double p[][NX], double dx, double dy, 
                             double dt, double u[][NX], double v[][NX],
                             double rho[][NX]){
-    int i, j, n;
+    int i, j;
+    int stepcount;
     
+    double diff, pdif, pnt;
     double b[NY][NX];
     double pn[NY][NX];
     double dx2 = dx * dx;
     double dy2 = dy * dy;
 
+    // Pre-solve b term.
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
             b[j][i] = (( rho[j][i] * dx2 * dy2 ) / ( 2 * (dx2 + dy2))) * 
@@ -104,16 +112,15 @@ void solve_pressure_poisson(double p[][NX], double dx, double dy,
         }
     } 
 
-    double diff = 1.0;
-    double pdif, pnt;
-    int stepcount = 0;
+    diff = 1.0;
+    stepcount = 0;
     while ( 1 ) {
         if ( stepcount >= 1e6 ){
             printf(COLOR_RESET);
             printf("Unable to solve poisson: sc = %d, diff = %e\n", stepcount, diff);
             exit( 1 );
         }
-        if ( diff < 1e-5 && stepcount > 4 )
+        if ( diff < 1e-5 && stepcount > 4 )  // Once converged, break out of loop.
             break;
 
         for ( j = 0; j < NY; j++ ){
@@ -219,11 +226,11 @@ void apply_vel_boundary_conditions(double u[][NX], double v[][NX]){
     }
 
     for ( i = 6; i < NX-6; i++ ){
-        // Bottom wall, imposed shear
+        // Bottom wall, freeslip
         u[0][i] = u[1][i];
         v[0][i] = 0.;
 
-        // Top wall, imposed shear
+        // Top wall, freeslip
         u[NY-1][i] = u[NY-2][i];
         v[NY-1][i] = 0.;
     }
