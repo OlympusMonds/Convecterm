@@ -499,8 +499,8 @@ int main () {
     apply_vel_boundary_conditions(u, v);
     apply_thermal_boundary_conditions(t);
 
-    int timestep = 0;
-    double current_time = 0;
+    timestep = 0;
+    current_time = 0;
     
     // Main loop
     while ( 1 ) {
