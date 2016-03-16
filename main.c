@@ -21,7 +21,7 @@
 #define WIPE_SCREEN  "\033[2J"
 
 
-void visualise(double arr[][NX], double min, double max, int clear){
+void visualise(double (*arr)[NX], double min, double max, int clear){
     /* Visualise a 2D field, coloured with 7 colours between min 
      * and max. If clear is 0, then clear the screen before visualising,
      */
@@ -81,9 +81,9 @@ void visualise(double arr[][NX], double min, double max, int clear){
 }
 
 
-void solve_pressure_poisson(double p[][NX], double dx, double dy, 
-                            double dt, double u[][NX], double v[][NX],
-                            double rho[][NX]){
+void solve_pressure_poisson(double (*p)[NX], double dx, double dy, 
+                            double dt, double (*u)[NX], double (*v)[NX],
+                            double (*rho)[NX]){
     int i, j;
     int stepcount;
     
@@ -99,8 +99,8 @@ void solve_pressure_poisson(double p[][NX], double dx, double dy,
     double twody = 2. * dy;
 
     // Pre-solve b term.
-    for ( j = 1; j < NY-1; j++ ){
-        for ( i = 1; i < NX-1; i++){
+    for ( j = 1; j < (NY-1); j++ ){
+        for ( i = 1; i < (NX-1); i++){
             b[j][i] = (( rho[j][i] * dx2 * dy2 ) / ( 2 * (dx2 + dy2))) * 
                       ( 
                           inv_dt * 
@@ -171,10 +171,10 @@ void solve_pressure_poisson(double p[][NX], double dx, double dy,
 }
 
 
-void solve_stokes_momentum(double u[][NX], double v[][NX],
-                           double un[][NX], double vn[][NX],
-                           double p[][NX], double rho[][NX],
-                           double nu[][NX],
+void solve_stokes_momentum(double (*u)[NX], double (*v)[NX],
+                           double (*un)[NX], double (*vn)[NX],
+                           double (*p)[NX], double (*rho)[NX],
+                           double (*nu)[NX],
                            double dt, double dx, double dy){
     int i, j;
 
@@ -200,7 +200,7 @@ void solve_stokes_momentum(double u[][NX], double v[][NX],
 }
 
 
-void apply_thermal_boundary_conditions(double t[][NX]){
+void apply_thermal_boundary_conditions(double (*t)[NX]){
     int i, j;
     
     for ( j = 0; j < NY; j++ ){
@@ -221,7 +221,7 @@ void apply_thermal_boundary_conditions(double t[][NX]){
 }
 
 
-void apply_vel_boundary_conditions(double u[][NX], double v[][NX]){
+void apply_vel_boundary_conditions(double (*u)[NX], double (*v)[NX]){
     int i, j;
     
     for ( j = 0; j < NY; j++ ){
@@ -246,10 +246,10 @@ void apply_vel_boundary_conditions(double u[][NX], double v[][NX]){
 }
 
 
-void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
+void solve_advection_diffusion(double (*t)[NX], double (*u)[NX], double (*v)[NX],
                                double dx, double dy,
-                               double rho[][NX], double dt,
-                               double cp, double k[][NX],
+                               double (*rho)[NX], double dt,
+                               double cp, double (*k)[NX],
                                double H){
     int i,j; 
     double tn[NY][NX];
@@ -284,10 +284,10 @@ void solve_advection_diffusion(double t[][NX], double u[][NX], double v[][NX],
 }
 
 
-void solve_flow(double u[][NX], double v[][NX], 
+void solve_flow(double (*u)[NX], double (*v)[NX], 
                 double dx, double dy,
-                double p[][NX], double rho[][NX],
-                double nu[][NX],
+                double (*p)[NX], double (*rho)[NX],
+                double (*nu)[NX],
                 double dt){
 
     int i, j;
@@ -344,7 +344,7 @@ void solve_flow(double u[][NX], double v[][NX],
 }
 
 
-void update_nu(double nu[][NX], double t[][NX]){
+void update_nu(double (*nu)[NX], double (*t)[NX]){
     /* Calculate temperature dependent viscosity. Based on 
      * Frank-Kamenetski formulation.
      * Viscosity gets lower with increase in temperature
@@ -364,7 +364,7 @@ void update_nu(double nu[][NX], double t[][NX]){
 }
 
 
-void update_rho(double rho[][NX], double t[][NX]){
+void update_rho(double (*rho)[NX], double (*t)[NX]){
     /* Calculate density change due to thermal expansion.
      * Using boissinesq approximation (rho change does not
      * effect velocity field). Change is linear.
@@ -384,7 +384,7 @@ void update_rho(double rho[][NX], double t[][NX]){
 }
 
 
-void update_k(double k[][NX], double t[][NX]){
+void update_k(double (*k)[NX], double (*t)[NX]){
     /* Calculate temperature dependent conductivity. 
      * Using linear relationship where higher temp gives
      * lower conductivity. This means slabs (cold drips)
@@ -405,7 +405,7 @@ void update_k(double k[][NX], double t[][NX]){
 }
 
 
-void calc_dt(double u[][NX], double v[][NX], double rho[][NX],
+void calc_dt(double (*u)[NX], double (*v)[NX], double (*rho)[NX],
              double* dx, double* dy, 
              double* dt, double* k, 
              double* cp){

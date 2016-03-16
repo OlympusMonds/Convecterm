@@ -1,7 +1,7 @@
 TARGET = convecterm
 LIBS = -lm
 CC = gcc
-CFLAGS = -Wall -Ofast
+CFLAGS = -Wall -O3 -ftree-vectorize
 
 .PHONY: default all clean
 
