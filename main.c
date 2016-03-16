@@ -182,8 +182,8 @@ void solve_stokes_momentum(double (*u)[NX], double (*v)[NX],
     double dtodx2 = dt / (dx * dx);
     double dtody2 = dt / (dy * dy);
    
-    for ( j = 1; j < NY-1; j++ ){
-        for ( i = 1; i < NX-1; i++){
+    for ( j = 1; j < (NY-1); j++ ){
+        for ( i = 1; i < (NX-1); i++){
             u[j][i] = un[j][i] - ( dt / (rho[j][i] * 2. * dx) ) * (p[j][i+1] - p[j][i-1]) +
                       nu[j][i] * (
                                   (dtodx2 * (un[j][i+1] - 2*un[j][i] + un[j][i-1])) +
