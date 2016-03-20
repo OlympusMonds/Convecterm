@@ -1,7 +1,7 @@
 TARGET = convecterm
 LIBS = -lm
 CC = clang
-CFLAGS = -Wall -O3 -Rpass-analysis=loop-vectorize
+CFLAGS = -Wall -Ofast
 
 .PHONY: default all clean
 
