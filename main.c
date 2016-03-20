@@ -6,7 +6,12 @@
 #include "advection_diffusion.h"
 
 
-void visualise(double (*arr)[NX], double min, double max, int clear){
+void 
+visualise(double (*arr)[NX], 
+          double min, 
+          double max, 
+          int clear)
+{
     /* Visualise a 2D field, coloured with 7 colours between min 
      * and max. If clear is 0, then clear the screen before visualising,
      */
@@ -66,10 +71,16 @@ void visualise(double (*arr)[NX], double min, double max, int clear){
 }
 
 
-void calc_dt(double (*u)[NX], double (*v)[NX], double (*rho)[NX],
-             double* dx, double* dy, 
-             double* dt, double* k, 
-             double* cp){
+void 
+calc_dt(double (*u)[NX], 
+        double (*v)[NX], 
+        double (*rho)[NX],
+        double* dx, 
+        double* dy, 
+        double* dt, 
+        double* k, 
+        double* cp)
+{
     int i,j;
     double vel_dt = 1e6;
     double nrg_dt;
@@ -103,7 +114,9 @@ void calc_dt(double (*u)[NX], double (*v)[NX], double (*rho)[NX],
 }
 
 
-int main () {
+int 
+main() 
+{
 
     double current_time;
 
