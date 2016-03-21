@@ -151,7 +151,7 @@ apply_vel_boundary_conditions(double (*u)[NX],
         v[j][NX-1] = v[j][NX-2];
     }
 
-    for ( i = 6; i < NX-6; i++ ){
+    for ( i = 0; i < NX; i++ ){
         // Bottom wall, freeslip
         u[0][i] = u[1][i];
         v[0][i] = 0.;
