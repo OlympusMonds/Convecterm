@@ -17,13 +17,15 @@ main()
     double dx = (XMAX - XMIN) / (NX - 1);
     double dy = (YMAX - YMIN) / (NY - 1);
 
-    double u[NY][NX];    // vel in x
-    double v[NY][NX];    // vel in y
-    double p[NY][NX];    // pressure
-    double rho[NY][NX];  // density
-    double nu[NY][NX];   // viscosity
-    double t[NY][NX];    // temperature
-    double k[NY][NX];    // conductivity
+    //double x[NX];
+    //double y[NY];
+    double u[NY*NX];    // vel in x
+    double v[NY*NX];    // vel in y
+    double p[NY*NX];    // pressure
+    double rho[NY*NX];  // density
+    double nu[NY*NX];   // viscosity
+    double t[NY*NX];    // temperature
+    double k[NY*NX];    // conductivity
 
     double cp = 60.;
     double H = 0.;
@@ -33,23 +35,22 @@ main()
     int i, j;
     int timestep;
     
-
     // Initial conditions
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
-          u[j][i] = 0.; 
-          v[j][i] = 0.; 
-          p[j][i] = ref_rho * dy * GRAVITY * (NY - j);  // Approximate lithostatic pressure
-          rho[j][i] = ref_rho; 
-          nu[j][i] = 1.;
+          u[NX*j + i] = 0.; 
+          v[NX*j + i] = 0.; 
+          p[NX*j + i] = ref_rho * dy * GRAVITY * (NY - j);  // Approximate lithostatic pressure
+          rho[NX*j + i] = ref_rho; 
+          nu[NX*j + i] = 1.;
           // Make the temp field unstable 
           if ( j < 4 && i < (int)(NX/2) )
-              t[j][i] = 1000.;
+              t[NX*j + i] = 1000.;
           else if ( j > NY-5 && i > (int)(NX/2) )
-              t[j][i] = 0.;
+              t[NX*j + i] = 0.;
           else
-              t[j][i] = 500.;
-          k[j][i] = 100.;
+              t[NX*j + i] = 500.;
+          k[NX*j + i] = 100.;
        }
     }
 
