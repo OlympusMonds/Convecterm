@@ -4,20 +4,20 @@
 #include <math.h>
 
 void 
-solve_pressure_poisson(double (*p)[NX], 
+solve_pressure_poisson(double *p, 
                        double dx, 
                        double dy, 
                        double dt, 
-                       double (*u)[NX], 
-                       double (*v)[NX],
-                       double (*rho)[NX])
+                       double *u, 
+                       double *v,
+                       double *rho)
 {
     int i, j;
     int stepcount;
     
     double diff, pdif, pnt;
-    double b[NY][NX];
-    double pn[NY][NX];
+    double b[NY*NX];
+    double pn[NY*NX];
 
     // Pre-compute
     double inv_dt = 1. / dt;
@@ -29,18 +29,18 @@ solve_pressure_poisson(double (*p)[NX],
     // Pre-solve b term.
     for ( j = 1; j < (NY-1); j++ ){
         for ( i = 1; i < (NX-1); i++){
-            b[j][i] = (( rho[j][i] * dx2 * dy2 ) / ( 2 * (dx2 + dy2))) * 
+            b[NX*j + i] = (( rho[NX*j + i] * dx2 * dy2 ) / ( 2 * (dx2 + dy2))) * 
                       ( 
                           inv_dt * 
                           (
-                           (( u[j][i+1] - u[j][i-1] ) / twodx ) +
-                           (( v[j+1][i] - v[j-1][i] ) / twody )
+                           (( u[NX*j + (i+1)] - u[NX*j + (i-1)] ) / twodx ) +
+                           (( v[NX*(j+1) + i] - v[NX*(j-1) + i] ) / twody )
                           ) -
-                          pow( (( u[j][i+1] - u[j][i-1] ) / twodx), 2) -
+                          pow( (( u[NX*j + (i+1)] - u[NX*j + (i-1)] ) / twodx), 2) -
                           2 *
-                          ((( u[j+1][i] - u[j-1][i] ) / twody ) *
-                           (( v[j][i+1] - v[j][i-1] ) / twodx )) -
-                          pow( (( v[j+1][i] - v[j-1][i] ) / twody ), 2)
+                          ((( u[NX*(j+1) + i] - u[NX*(j-1) + i] ) / twody ) *
+                           (( v[NX*j + (i+1)] - v[NX*j + (i-1)] ) / twodx )) -
+                          pow( (( v[NX*(j+1) + i] - v[NX*(j-1) + i] ) / twody ), 2)
                       );
         }
     } 
@@ -58,25 +58,25 @@ solve_pressure_poisson(double (*p)[NX],
 
         for ( j = 0; j < NY; j++ ){
             for ( i = 0; i < NX; i++){
-                pn[j][i] = p[j][i];
+                pn[NX*j + i] = p[NX*j + i];
             }
         }
 
         for ( j = 1; j < NY-1; j++ ){
             for ( i = 1; i < NX-1; i++){
-                p[j][i] = (( pn[j][i+1] + pn[j][i-1] ) * dy2 + ( pn[j+1][i] + pn[j-1][i] ) * dx2 ) /
-                          ( 2 * (dx2 + dy2) ) - b[j][i];
+                p[NX*j + i] = (( pn[NX*j + (i+1)] + pn[NX*j + (i-1)] ) * dy2 + ( pn[NX*(j+1) + i] + pn[NX*(j-1) + i] ) * dx2 ) /
+                          ( 2 * (dx2 + dy2) ) - b[NX*j + i];
             }
         }
 
         // Boundary conditions
         for ( j = 0; j < NY; j++ ){
-            p[j][0] = p[j][1];
-            p[j][NX-1] = p[j][NX-2];
+            p[NX*j + 0] = p[NX*j + 1];
+            p[NX*j + (NX-1)] = p[NX*j + (NX-2)];
         }
         for ( i = 0; i < NX; i++ ){
-            p[0][i] = p[1][i];
-            p[NY-1][i] = p[NY-2][i];
+            p[0 + i] = p[NX*1 + i];
+            p[NX*(NY-1) + i]= p[NX*(NY-2) + i];
         }
 
         // Check if in steady state
@@ -85,8 +85,8 @@ solve_pressure_poisson(double (*p)[NX],
 
         for ( j = 0; j < NY; j++ ){
            for ( i = 0; i < NX; i++ ){
-               pdif += fabs(fabs(p[j][i]) - fabs(pn[j][i]));
-               pnt += fabs(pn[j][i]);
+               pdif += fabs(fabs(p[NX*j + i]) - fabs(pn[NX*j + i]));
+               pnt += fabs(pn[NX*j + i]);
            }
         }
         if ( pnt != 0. )
@@ -100,13 +100,13 @@ solve_pressure_poisson(double (*p)[NX],
 
 
 void 
-solve_stokes_momentum(double (*u)[NX], 
-                      double (*v)[NX],
-                      double (*un)[NX], 
-                      double (*vn)[NX],
-                      double (*p)[NX], 
-                      double (*rho)[NX],
-                      double (*nu)[NX],
+solve_stokes_momentum(double *u, 
+                      double *v,
+                      double *un, 
+                      double *vn,
+                      double *p, 
+                      double *rho,
+                      double *nu,
                       double dt, 
                       double dx, 
                       double dy)
@@ -119,66 +119,66 @@ solve_stokes_momentum(double (*u)[NX],
    
     for ( j = 1; j < (NY-1); j++ ){
         for ( i = 1; i < (NX-1); i++){
-            u[j][i] = un[j][i] - ( dt / (rho[j][i] * 2. * dx) ) * (p[j][i+1] - p[j][i-1]) +
-                      nu[j][i] * (
-                                  (dtodx2 * (un[j][i+1] - 2*un[j][i] + un[j][i-1])) +
-                                  (dtody2 * (un[j+1][i] - 2*un[j][i] + un[j-1][i]))
+            u[NX*j + i] = un[NX*j + i] - ( dt / (rho[NX*j + i] * 2. * dx) ) * (p[NX*j + (i+1)] - p[NX*j + (i-1)]) +
+                      nu[NX*j + i] * (
+                                  (dtodx2 * (un[NX*j + (i+1)] - 2*un[NX*j + i] + un[NX*j + (i-1)])) +
+                                  (dtody2 * (un[NX*(j+1) + i] - 2*un[NX*j + i] + un[NX*(j-1) + i]))
                                  );
             
-            v[j][i] = (vn[j][i] - ( dt / (rho[j][i] * 2. * dy) ) * (p[j+1][i] - p[j-1][i]) +
-                       nu[j][i] * (
-                                   (dtodx2 * (vn[j][i+1] - 2*vn[j][i] + vn[j][i-1])) +
-                                   (dtody2 * (vn[j+1][i] - 2*vn[j][i] + vn[j-1][i]))
-                                  )) - (GRAVITY * rho[j][i]);
+            v[NX*j + i] = (vn[NX*j + i] - ( dt / (rho[NX*j + i] * 2. * dy) ) * (p[NX*(j+1) + i] - p[NX*(j-1) + i]) +
+                       nu[NX*j + i] * (
+                                   (dtodx2 * (vn[NX*j + (i+1)] - 2*vn[NX*j + i] + vn[NX*j + (i-1)])) +
+                                   (dtody2 * (vn[NX*(j+1) + i] - 2*vn[NX*j + i] + vn[NX*(j-1) + i]))
+                                  )) - (GRAVITY * rho[NX*j + i]);
         }
     }
 }
 
 
 void 
-apply_vel_boundary_conditions(double (*u)[NX], 
-                              double (*v)[NX])
+apply_vel_boundary_conditions(double *u, 
+                              double *v)
 {
     int i, j;
     
     for ( j = 0; j < NY; j++ ){
         // Vel Left wall, freeslip
-        u[j][0] = 0.;
-        v[j][0] = v[j][1];
+        u[NX*j + 0] = 0.;
+        v[NX*j + 0] = v[NX*j + 1];
 
         // Right wall, freeslip
-        u[j][NX-1] = 0.;
-        v[j][NX-1] = v[j][NX-2];
+        u[NX*j + (NX-1)] = 0.;
+        v[NX*j + (NX-1)] = v[NX*j + (NX-2)];
     }
 
-    for ( i = 6; i < NX-6; i++ ){
+    for ( i = 0; i < NX; i++ ){
         // Bottom wall, freeslip
-        u[0][i] = u[1][i];
-        v[0][i] = 0.;
+        u[0 + i] = u[NX*1 + i];
+        v[0 + i] = 0.;
 
         // Top wall, freeslip
-        u[NY-1][i] = u[NY-2][i];
-        v[NY-1][i] = 0.;
+        u[NX*(NY-1) + i] = u[NX*(NY-2) + i];
+        v[NX*(NY-1) + i] = 0.;
     }
 }
 
 
 void 
-solve_flow(double (*u)[NX], 
-           double (*v)[NX], 
+solve_flow(double *u, 
+           double *v, 
            double dx, 
            double dy,
-           double (*p)[NX], 
-           double (*rho)[NX],
-           double (*nu)[NX],
+           double *p, 
+           double *rho,
+           double *nu,
            double dt)
 {
 
     int i, j;
     int stepcount = 0;
 
-    double un[NY][NX];
-    double vn[NY][NX];
+    double un[NY*NX];
+    double vn[NY*NX];
     double diff = 1000.;
     double udif, vdif, unt, vnt;
 
@@ -193,8 +193,8 @@ solve_flow(double (*u)[NX],
 
         for ( j = 0; j < NY; j++ ){
            for ( i = 0; i < NX; i++ ){
-               un[j][i] = u[j][i];
-               vn[j][i] = v[j][i];
+               un[NX*j + i] = u[NX*j + i];
+               vn[NX*j + i] = v[NX*j + i];
            }
         }
 
@@ -211,11 +211,11 @@ solve_flow(double (*u)[NX],
 
         for ( j = 0; j < NY; j++ ){
            for ( i = 0; i < NX; i++ ){
-               udif += fabs(fabs(u[j][i]) - fabs(un[j][i]));
-               unt += fabs(un[j][i]);
+               udif += fabs(fabs(u[NX*j + i]) - fabs(un[NX*j + i]));
+               unt += fabs(un[NX*j + i]);
                
-               vdif += fabs(fabs(v[j][i]) - fabs(vn[j][i]));
-               vnt += fabs(vn[j][i]);
+               vdif += fabs(fabs(v[NX*j + i]) - fabs(vn[NX*j + i]));
+               vnt += fabs(vn[NX*j + i]);
            }
         }
         if ( unt != 0. && vnt != 0. )

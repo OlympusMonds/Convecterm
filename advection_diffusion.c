@@ -2,42 +2,42 @@
 #include <math.h>
 
 void 
-apply_thermal_boundary_conditions(double (*t)[NX])
+apply_thermal_boundary_conditions(double *t)
 {
     int i, j;
-    
+   
     for ( j = 0; j < NY; j++ ){
         // Temp left wall, "freeslip" (temp doesn't escape)
-        t[j][0] = t[j][1];
+        t[NX*j + 0] = t[NX*j + 1];
         
         // Temp right wall, "freeslip" (temp doesn't escape)
-        t[j][NX-1] = t[j][NX-2];
+        t[NX*j + (NX-1)] = t[NX*j + (NX-2)];
     }
 
     for ( i = 0; i < NX; i++ ){
         // Temp bottom wall, 
-        t[0][i] = 1000.;
+        t[0 + i] = 1000.;
 
         // Temp bottom wall, 
-        t[NY-1][i] = 0.;
+        t[NX*(NY-1) + i] = 0.;
     }
 }
 
 
 void 
-solve_advection_diffusion(double (*t)[NX], 
-                          double (*u)[NX], 
-                          double (*v)[NX],
+solve_advection_diffusion(double *t, 
+                          double *u, 
+                          double *v,
                           double dx, 
                           double dy,
-                          double (*rho)[NX], 
+                          double *rho, 
                           double dt,
                           double cp, 
-                          double (*k)[NX],
+                          double *k,
                           double H)
 {
     int i,j; 
-    double tn[NY][NX];
+    double tn[NY*NX];
     double kx;
     double ky;
 
@@ -49,19 +49,19 @@ solve_advection_diffusion(double (*t)[NX],
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
-           tn[j][i] = t[j][i];
+           tn[NX*j + i] = t[NX*j + i];
        }
     }
    
  
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
-           kx = k[j][i] * (tn[j][i+1] - 2.*tn[j][i] + tn[j][i-1]) / dx2;
-           ky = k[j][i] * (tn[j+1][i] - 2.*tn[j][i] + tn[j-1][i]) / dy2;
+           kx = k[NX*j + i] * (tn[NX*j + (i+1)] - 2.*tn[NX*j + i] + tn[NX*j + (i-1)]) / dx2;
+           ky = k[NX*j + i] * (tn[NX*(j+1) + i] - 2.*tn[NX*j + i] + tn[NX*(j-1) + i]) / dy2;
 
-           t[j][i] = tn[j][i] + dt * ((H + kx + ky)/(rho[j][i] * cp) \
-                     - (u[j][i] * ( (tn[j][i+1] - tn[j][i-1]) / twodx )) \
-                     - (v[j][i] * ( (tn[j+1][i] - tn[j-1][i]) / twody )) );
+           t[NX*j + i] = tn[NX*j + i] + dt * ((H + kx + ky)/(rho[NX*j + i] * cp) \
+                     - (u[NX*j + i] * ( (tn[NX*j + (i+1)] - tn[NX*j + (i-1)]) / twodx )) \
+                     - (v[NX*j + i] * ( (tn[NX*(j+1) + i] - tn[NX*(j-1) + i]) / twody )) );
        }
     }
 
@@ -71,8 +71,8 @@ solve_advection_diffusion(double (*t)[NX],
 
 
 void 
-update_nu(double (*nu)[NX], 
-          double (*t)[NX])
+update_nu(double *nu, 
+          double *t)
 {
     /* Calculate temperature dependent viscosity. Based on 
      * Frank-Kamenetski formulation.
@@ -87,15 +87,15 @@ update_nu(double (*nu)[NX],
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
-           nu[j][i] = ref_nu * exp(-theta * ((t[j][i] - ref_temp)/ref_temp));
+           nu[NX*j + i] = ref_nu * exp(-theta * ((t[NX*j + i] - ref_temp)/ref_temp));
        }
     }
 }
 
 
 void 
-update_rho(double (*rho)[NX], 
-           double (*t)[NX])
+update_rho(double *rho, 
+           double *t)
 {
     /* Calculate density change due to thermal expansion.
      * Using boissinesq approximation (rho change does not
@@ -110,15 +110,15 @@ update_rho(double (*rho)[NX],
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
-           rho[j][i] = ref_rho * (1. - (thermal_expansivity * (t[j][i] - ref_temp)));
+           rho[NX*j + i] = ref_rho * (1. - (thermal_expansivity * (t[NX*j + i] - ref_temp)));
        }
     }
 }
 
 
 void 
-update_k(double (*k)[NX], 
-         double (*t)[NX])
+update_k(double *k, 
+         double *t)
 {
     /* Calculate temperature dependent conductivity. 
      * Using linear relationship where higher temp gives
@@ -134,7 +134,7 @@ update_k(double (*k)[NX],
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
-           k[j][i] = ref_k * (1. - (thermal_factor * (t[j][i] - ref_temp)));
+           k[NX*j + i] = ref_k * (1. - (thermal_factor * (t[NX*j + i] - ref_temp)));
        }
     }
 }

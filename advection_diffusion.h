@@ -4,33 +4,33 @@
 #include "environment.h"
 
 void 
-apply_thermal_boundary_conditions(double (*t)[NX]);
+apply_thermal_boundary_conditions(double *t);
 
 void 
-solve_advection_diffusion(double (*t)[NX], 
-                          double (*u)[NX], 
-                          double (*v)[NX],
+solve_advection_diffusion(double *t, 
+                          double *u, 
+                          double *v,
                           double dx, 
                           double dy,
-                          double (*rho)[NX], 
+                          double *rho, 
                           double dt,
                           double cp, 
-                          double (*k)[NX],
+                          double *k,
                           double H);
 
 void 
-update_nu(double (*nu)[NX], 
-          double (*t)[NX]);
+update_nu(double *nu, 
+          double *t);
 
 
 void 
-update_rho(double (*rho)[NX], 
-           double (*t)[NX]);
+update_rho(double *rho, 
+           double *t);
 
 
 void 
-update_k(double (*k)[NX], 
-         double (*t)[NX]);
+update_k(double *k, 
+         double *t);
 
 
 #endif
