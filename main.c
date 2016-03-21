@@ -1,3 +1,4 @@
+#ifndef BENCH
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -199,3 +200,4 @@ main()
 
     return 0;
 }
+#endif
