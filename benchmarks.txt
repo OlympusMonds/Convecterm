@@ -10,3 +10,10 @@ gcc -Ofast -Wall
 cmd: Ran 23 iterations (3 outliers).
 cmd: Rounded run time per iteration: 6.205e+00 +/- 1.6e-02 (0.3%)
 cmd: Raw:                            6.20543262599741 +/- 0.0156901724556368
+
+
+gcc -Ofast -Wall  # Using 1D array branch (on battery..)
+cmd: Ran 26 iterations (6 outliers).
+cmd: Rounded run time per iteration: 6.662e+00 +/- 6.1e-02 (0.9%)
+cmd: Raw:                            6.66202279090881 +/- 0.0614886307358961
+

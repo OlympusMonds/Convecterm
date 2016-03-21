@@ -1,7 +1,7 @@
 TARGET = convecterm
 LIBS = -lm
 CC = gcc
-CFLAGS = -Wall -Ofast # -DBENCH  # Add for benchmarking
+CFLAGS = -Wall -Ofast -DBENCH  # Add for benchmarking
 
 .PHONY: default all clean
 
