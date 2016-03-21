@@ -8,7 +8,7 @@
 
 
 void 
-visualise(double (*arr)[NX], 
+visualise(double *arr, 
           double min, 
           double max, 
           int clear)
@@ -42,17 +42,17 @@ visualise(double (*arr)[NX],
            field[count] = COLOR_ESC;
            field[count+1] = '[';
            field[count+2] = '3';
-           if ( arr[j][i] < r1 )
+           if ( arr[NX*j + i] < r1 )
                field[count+3] = '4';  // BLUE
-           else if (arr[j][i] < r2 && arr[j][i] >= r1 )
+           else if (arr[NX*j + i] < r2 && arr[NX*j + i] >= r1 )
                field[count+3] = '6';  // CYAN
-           else if (arr[j][i] < r3 && arr[j][i] >= r2 )
+           else if (arr[NX*j + i] < r3 && arr[NX*j + i] >= r2 )
                field[count+3] = '2';  // GREEN
-           else if (arr[j][i] < r4 && arr[j][i] >= r3 )
+           else if (arr[NX*j + i] < r4 && arr[NX*j + i] >= r3 )
                field[count+3] = '7';  // WHITE
-           else if (arr[j][i] < r5 && arr[j][i] >= r4 )
+           else if (arr[NX*j + i] < r5 && arr[NX*j + i] >= r4 )
                field[count+3] = '3';  // YELLOW
-           else if (arr[j][i] < r6 && arr[j][i] >= r5 )
+           else if (arr[NX*j + i] < r6 && arr[NX*j + i] >= r5 )
                field[count+3] = '1';  // RED
            else
                field[count+3] = '5';  // MAGENTA
@@ -73,9 +73,9 @@ visualise(double (*arr)[NX],
 
 
 void 
-calc_dt(double (*u)[NX], 
-        double (*v)[NX], 
-        double (*rho)[NX],
+calc_dt(double *u, 
+        double *v, 
+        double *rho,
         double* dx, 
         double* dy, 
         double* dt, 
@@ -96,11 +96,11 @@ calc_dt(double (*u)[NX],
 
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
-           uv = fabs(u[j][i]);
-           vv = fabs(v[j][i]);
+           uv = fabs(u[NX*j + i]);
+           vv = fabs(v[NX*j + i]);
            max_velx = uv > max_velx ? uv : max_velx;
            max_vely = vv > max_vely ? vv : max_vely;
-           min_rho = rho[j][i] < min_rho ? rho[j][i] : min_rho;
+           min_rho = rho[NX*j + i] < min_rho ? rho[NX*j + i] : min_rho;
        }
     }
     max_vel = max_velx > max_vely ? max_velx : max_vely;
@@ -126,13 +126,13 @@ main()
 
     //double x[NX];
     //double y[NY];
-    double u[NY][NX];    // vel in x
-    double v[NY][NX];    // vel in y
-    double p[NY][NX];    // pressure
-    double rho[NY][NX];  // density
-    double nu[NY][NX];   // viscosity
-    double t[NY][NX];    // temperature
-    double k[NY][NX];    // conductivity
+    double u[NY*NX];    // vel in x
+    double v[NY*NX];    // vel in y
+    double p[NY*NX];    // pressure
+    double rho[NY*NX];  // density
+    double nu[NY*NX];   // viscosity
+    double t[NY*NX];    // temperature
+    double k[NY*NX];    // conductivity
 
     double cp = 60.;
     double H = 0.;
@@ -154,19 +154,19 @@ main()
     // Initial conditions
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
-          u[j][i] = 0.; 
-          v[j][i] = 0.; 
-          p[j][i] = ref_rho * dy * GRAVITY * (NY - j);  // Approximate lithostatic pressure
-          rho[j][i] = ref_rho; 
-          nu[j][i] = 1.;
+          u[NX*j + i] = 0.; 
+          v[NX*j + i] = 0.; 
+          p[NX*j + i] = ref_rho * dy * GRAVITY * (NY - j);  // Approximate lithostatic pressure
+          rho[NX*j + i] = ref_rho; 
+          nu[NX*j + i] = 1.;
           // Make the temp field unstable 
           if ( j < 4 && i < (int)(NX/2) )
-              t[j][i] = 1000.;
+              t[NX*j + i] = 1000.;
           else if ( j > NY-5 && i > (int)(NX/2) )
-              t[j][i] = 0.;
+              t[NX*j + i] = 0.;
           else
-              t[j][i] = 500.;
-          k[j][i] = 100.;
+              t[NX*j + i] = 500.;
+          k[NX*j + i] = 100.;
        }
     }
 
