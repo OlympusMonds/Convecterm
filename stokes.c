@@ -219,7 +219,7 @@ solve_flow(double (*u)[NX],
            }
         }
         if ( unt != 0. && vnt != 0. )
-            diff = ( fabs(udif/unt) - fabs(vdif/vnt) ) / 2.;
+            diff = fabs( fabs(udif/unt) - fabs(vdif/vnt) ) / 2.;
         else
             diff = 1.0;
 
