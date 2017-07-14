@@ -27,6 +27,7 @@ solve_pressure_poisson(double *p,
     double twody = 2. * dy;
 
     // Pre-solve b term.
+    #pragma omp parallel for
     for ( j = 1; j < (NY-1); j++ ){
         for ( i = 1; i < (NX-1); i++){
             b[NX*j + i] = (( rho[NX*j + i] * dx2 * dy2 ) / ( 2 * (dx2 + dy2))) * 
@@ -56,12 +57,14 @@ solve_pressure_poisson(double *p,
         if ( diff < 1e-5 && stepcount > 4 )  // Once converged, break out of loop.
             break;
 
+        #pragma omp parallel for
         for ( j = 0; j < NY; j++ ){
             for ( i = 0; i < NX; i++){
                 pn[NX*j + i] = p[NX*j + i];
             }
         }
 
+        #pragma omp parallel for
         for ( j = 1; j < NY-1; j++ ){
             for ( i = 1; i < NX-1; i++){
                 p[NX*j + i] = (( pn[NX*j + (i+1)] + pn[NX*j + (i-1)] ) * dy2 + ( pn[NX*(j+1) + i] + pn[NX*(j-1) + i] ) * dx2 ) /
@@ -70,10 +73,12 @@ solve_pressure_poisson(double *p,
         }
 
         // Boundary conditions
+        #pragma omp parallel for
         for ( j = 0; j < NY; j++ ){
             p[NX*j + 0] = p[NX*j + 1];
             p[NX*j + (NX-1)] = p[NX*j + (NX-2)];
         }
+        #pragma omp parallel for
         for ( i = 0; i < NX; i++ ){
             p[0 + i] = p[NX*1 + i];
             p[NX*(NY-1) + i]= p[NX*(NY-2) + i];
@@ -83,6 +88,7 @@ solve_pressure_poisson(double *p,
         pdif = 0.;
         pnt = 0.;
 
+        #pragma omp parallel for
         for ( j = 0; j < NY; j++ ){
            for ( i = 0; i < NX; i++ ){
                pdif += fabs(fabs(p[NX*j + i]) - fabs(pn[NX*j + i]));
@@ -117,6 +123,7 @@ solve_stokes_momentum(double *u,
     double dtodx2 = dt / (dx * dx);
     double dtody2 = dt / (dy * dy);
    
+    #pragma omp parallel for
     for ( j = 1; j < (NY-1); j++ ){
         for ( i = 1; i < (NX-1); i++){
             u[NX*j + i] = un[NX*j + i] - ( dt / (rho[NX*j + i] * 2. * dx) ) * (p[NX*j + (i+1)] - p[NX*j + (i-1)]) +
@@ -141,6 +148,7 @@ apply_vel_boundary_conditions(double *u,
 {
     int i, j;
     
+    #pragma omp parallel for
     for ( j = 0; j < NY; j++ ){
         // Vel Left wall, freeslip
         u[NX*j + 0] = 0.;
@@ -151,6 +159,7 @@ apply_vel_boundary_conditions(double *u,
         v[NX*j + (NX-1)] = v[NX*j + (NX-2)];
     }
 
+    #pragma omp parallel for
     for ( i = 0; i < NX; i++ ){
         // Bottom wall, freeslip
         u[0 + i] = u[NX*1 + i];
@@ -191,6 +200,7 @@ solve_flow(double *u,
         if ( diff < 1e-5 && stepcount >= 2 )
             break;
 
+        #pragma omp parallel for
         for ( j = 0; j < NY; j++ ){
            for ( i = 0; i < NX; i++ ){
                un[NX*j + i] = u[NX*j + i];
@@ -209,6 +219,7 @@ solve_flow(double *u,
         unt = 0.;
         vnt = 0.;
 
+        #pragma omp parallel for
         for ( j = 0; j < NY; j++ ){
            for ( i = 0; i < NX; i++ ){
                udif += fabs(fabs(u[NX*j + i]) - fabs(un[NX*j + i]));

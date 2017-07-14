@@ -62,7 +62,7 @@ main()
     current_time = 0;
     
     // Main loop
-    while ( timestep < 100 ) {
+    while ( timestep < 1000 ) {
         // Solve thermal stuff first, so the flow equations have some meat to start with
         solve_advection_diffusion(t, u, v, dx, dy, rho, dt, cp, k, H);
         update_rho(rho, t);

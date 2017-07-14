@@ -1,4 +1,5 @@
 #include "advection_diffusion.h"
+#include <omp.h>
 #include <math.h>
 
 void 
@@ -6,6 +7,7 @@ apply_thermal_boundary_conditions(double *t)
 {
     int i, j;
    
+    #pragma omp parallel for
     for ( j = 0; j < NY; j++ ){
         // Temp left wall, "freeslip" (temp doesn't escape)
         t[NX*j + 0] = t[NX*j + 1];
@@ -14,6 +16,7 @@ apply_thermal_boundary_conditions(double *t)
         t[NX*j + (NX-1)] = t[NX*j + (NX-2)];
     }
 
+    #pragma omp parallel for
     for ( i = 0; i < NX; i++ ){
         // Temp bottom wall, 
         t[0 + i] = 1000.;
@@ -47,6 +50,7 @@ solve_advection_diffusion(double *t,
     double twodx = 2. * dx;
     double twody = 2. * dy;
 
+    #pragma omp parallel for
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
            tn[NX*j + i] = t[NX*j + i];
@@ -54,6 +58,7 @@ solve_advection_diffusion(double *t,
     }
    
  
+    #pragma omp parallel for
     for ( j = 1; j < NY-1; j++ ){
         for ( i = 1; i < NX-1; i++){
            kx = k[NX*j + i] * (tn[NX*j + (i+1)] - 2.*tn[NX*j + i] + tn[NX*j + (i-1)]) / dx2;
@@ -85,6 +90,7 @@ update_nu(double *nu,
     double ref_temp = 500.;
     double theta = 1.5;
 
+    #pragma omp parallel for
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
            nu[NX*j + i] = ref_nu * exp(-theta * ((t[NX*j + i] - ref_temp)/ref_temp));
@@ -108,6 +114,7 @@ update_rho(double *rho,
     double ref_temp = 500.;
     double thermal_expansivity = 0.001;
 
+    #pragma omp parallel for
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
            rho[NX*j + i] = ref_rho * (1. - (thermal_expansivity * (t[NX*j + i] - ref_temp)));
@@ -132,6 +139,7 @@ update_k(double *k,
     double ref_temp = 500.;
     double thermal_factor = 0.001;
 
+    #pragma omp parallel for
     for ( j = 0; j < NY; j++ ){
        for ( i = 0; i < NX; i++ ){
            k[NX*j + i] = ref_k * (1. - (thermal_factor * (t[NX*j + i] - ref_temp)));
