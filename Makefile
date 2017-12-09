@@ -1,12 +1,15 @@
 TARGET = convecterm
 LIBS = -lm -fopenmp
 CC = gcc
-CFLAGS = -Wall -Ofast -fopenmp #-DBENCH  # Add for benchmarking
+CFLAGS = -Wall -Ofast -fopenmp -fopt-info-vec-missed #-DBENCH  # Add for benchmarking
 
 .PHONY: default all clean
 
 default: $(TARGET)
 all: default
+
+bench: clean all
+	$(shell bench  './convecterm')
 
 OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
 HEADERS = $(wildcard *.h)

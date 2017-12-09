@@ -15,7 +15,13 @@ apply_thermal_boundary_conditions(double *t)
         // Temp right wall, "freeslip" (temp doesn't escape)
         t[NX*j + (NX-1)] = t[NX*j + (NX-2)];
     }
-
+    /*
+    #pragma omp parallel for
+    for ( j = 0; j < NY; j++ ){
+        // periodic BCs
+        t[NX*j + 0] = t[NX*j + (NX-1)];
+    }
+    */
     #pragma omp parallel for
     for ( i = 0; i < NX; i++ ){
         // Temp bottom wall, 
@@ -58,15 +64,28 @@ solve_advection_diffusion(double *t,
     }
    
  
+    unsigned int n = 0;
+    unsigned int s = 0;
+    unsigned int m = 0;
+    unsigned int e = 0;
+    unsigned int w = 0;
+
     #pragma omp parallel for
     for ( j = 1; j < NY-1; j++ ){
+        #pragma omp simd safelen(3)
         for ( i = 1; i < NX-1; i++){
-           kx = k[NX*j + i] * (tn[NX*j + (i+1)] - 2.*tn[NX*j + i] + tn[NX*j + (i-1)]) / dx2;
-           ky = k[NX*j + i] * (tn[NX*(j+1) + i] - 2.*tn[NX*j + i] + tn[NX*(j-1) + i]) / dy2;
+            m = NX*j + i;
+            n = NX*(j-1) + i;
+            s = NX*(j+1) + i;
+            e = NX*j + (i+1);
+            w = NX*j + (i-1);
 
-           t[NX*j + i] = tn[NX*j + i] + dt * ((H + kx + ky)/(rho[NX*j + i] * cp) \
-                     - (u[NX*j + i] * ( (tn[NX*j + (i+1)] - tn[NX*j + (i-1)]) / twodx )) \
-                     - (v[NX*j + i] * ( (tn[NX*(j+1) + i] - tn[NX*(j-1) + i]) / twody )) );
+            kx = k[m] * (tn[e] - 2.*tn[m] + tn[w]) / dx2;
+            ky = k[m] * (tn[s] - 2.*tn[m] + tn[n]) / dy2;
+
+            t[m] = tn[m] + dt * ((H + kx + ky)/(rho[m] * cp) \
+                     - (u[m] * ( (tn[e] - tn[w]) / twodx )) \
+                     - (v[m] * ( (tn[s] - tn[n]) / twody )) );
        }
     }
 

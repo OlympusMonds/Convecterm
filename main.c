@@ -136,7 +136,7 @@ main()
 
     double cp = 60.;
     double H = 0.;
-    double dt = 9e-5;
+    double dt = 9e-7;
     double ref_rho = 100.;
 
     int i, j;
