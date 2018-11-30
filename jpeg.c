@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <jpeglib.h>
 #include <stdlib.h>
+bargf
 
 /* we will be using this uninitialized pointer later to store raw, uncompressd image */
 unsigned char *raw_image = NULL;
