@@ -27,6 +27,7 @@ visualise(double *arr,
     double r4 = ((max - min) * 0.57128) + min;
     double r5 = ((max - min) * 0.71429) + min;
     double r6 = ((max - min) * 0.85714) + min;
+    ok ok
 
     // Store characters in field before printfing.
     char field[(NY * (9*NX + 1)) + 1];
